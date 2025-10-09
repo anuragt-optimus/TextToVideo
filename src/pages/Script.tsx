@@ -196,24 +196,11 @@ const Script = () => {
         <ProgressSteps currentStep={2} steps={STEPS} />
 
         <div className="max-w-5xl mx-auto mt-12">
-          <div className="flex justify-between items-start mb-12">
-            <div>
-              <h1 className="text-4xl font-bold mb-3">Script Editor</h1>
-              <p className="text-muted-foreground">
-                Review and edit your AI-generated script
-              </p>
-            </div>
-            <div className="flex gap-2">
-              <Button 
-                variant="outline" 
-                className="gap-2"
-                onClick={generateWithAI}
-                disabled={isGenerating || !uploadedContent}
-              >
-                <Wand2 className="w-4 h-4" />
-                {isGenerating ? "Generating..." : "Generate with AI"}
-              </Button>
-            </div>
+          <div className="mb-12">
+            <h1 className="text-4xl font-bold mb-3">Script Editor</h1>
+            <p className="text-muted-foreground">
+              Review and edit your AI-generated script
+            </p>
           </div>
 
           <div className="grid lg:grid-cols-4 gap-8">
