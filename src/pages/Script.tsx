@@ -82,7 +82,7 @@ const Script = () => {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [currentSceneId, setCurrentSceneId] = useState<string | null>(null);
   const [userPrompt, setUserPrompt] = useState("");
-  const [selectedToneOverride, setSelectedToneOverride] = useState<string>("");
+  const [selectedToneOverride, setSelectedToneOverride] = useState<string>("default");
   const [selectedLength, setSelectedLength] = useState<string>("medium");
 
   const generateWithAI = async () => {
@@ -158,7 +158,7 @@ const Script = () => {
       const { data, error } = await supabase.functions.invoke("generate-script", {
         body: { 
           content: enhancedPrompt,
-          tone: toneOverride || uploadedTone 
+          tone: toneOverride && toneOverride !== "default" ? toneOverride : uploadedTone 
         },
       });
 
@@ -239,7 +239,7 @@ const Script = () => {
                             onClick={() => {
                               setCurrentSceneId(scene.id);
                               setUserPrompt("");
-                              setSelectedToneOverride("");
+                              setSelectedToneOverride("default");
                               setSelectedLength("medium");
                             }}
                             disabled={generatingSceneId === scene.id}
@@ -276,7 +276,7 @@ const Script = () => {
                                   <SelectValue placeholder={`Use uploaded tone (${uploadedTone})`} />
                                 </SelectTrigger>
                                 <SelectContent>
-                                  <SelectItem value="">Use uploaded tone ({uploadedTone})</SelectItem>
+                                  <SelectItem value="default">Use uploaded tone ({uploadedTone})</SelectItem>
                                   <SelectItem value="Professional">Professional</SelectItem>
                                   <SelectItem value="Casual">Casual</SelectItem>
                                   <SelectItem value="Friendly">Friendly</SelectItem>
