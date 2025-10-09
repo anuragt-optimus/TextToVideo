@@ -17,12 +17,12 @@ const STEPS = [
 ];
 
 const PRESET_AVATARS = [
-  { id: "1", name: "Sarah", style: "Professional", gender: "Female" },
-  { id: "2", name: "Michael", style: "Casual", gender: "Male" },
-  { id: "3", name: "Elena", style: "Formal", gender: "Female" },
-  { id: "4", name: "James", style: "Professional", gender: "Male" },
-  { id: "5", name: "Priya", style: "Casual", gender: "Female" },
-  { id: "6", name: "David", style: "Formal", gender: "Male" },
+  { id: "1", name: "Sarah", style: "Professional", gender: "Female", image: "https://api.dicebear.com/7.x/avataaars/svg?seed=Sarah&backgroundColor=b6e3f4" },
+  { id: "2", name: "Michael", style: "Casual", gender: "Male", image: "https://api.dicebear.com/7.x/avataaars/svg?seed=Michael&backgroundColor=c0aede" },
+  { id: "3", name: "Elena", style: "Formal", gender: "Female", image: "https://api.dicebear.com/7.x/avataaars/svg?seed=Elena&backgroundColor=ffd5dc" },
+  { id: "4", name: "James", style: "Professional", gender: "Male", image: "https://api.dicebear.com/7.x/avataaars/svg?seed=James&backgroundColor=d1d4f9" },
+  { id: "5", name: "Priya", style: "Casual", gender: "Female", image: "https://api.dicebear.com/7.x/avataaars/svg?seed=Priya&backgroundColor=ffeaa7" },
+  { id: "6", name: "David", style: "Formal", gender: "Male", image: "https://api.dicebear.com/7.x/avataaars/svg?seed=David&backgroundColor=fab1a0" },
 ];
 
 const Avatar = () => {
@@ -73,8 +73,12 @@ const Avatar = () => {
                       setUploadedImage(null);
                     }}
                   >
-                    <div className="aspect-square bg-muted rounded-lg mb-4 flex items-center justify-center">
-                      <User className="w-16 h-16 text-muted-foreground" />
+                    <div className="aspect-square bg-muted rounded-lg mb-4 overflow-hidden">
+                      <img 
+                        src={avatar.image} 
+                        alt={`${avatar.name} avatar`}
+                        className="w-full h-full object-cover"
+                      />
                     </div>
                     <h3 className="font-semibold mb-1">{avatar.name}</h3>
                     <p className="text-sm text-muted-foreground mb-1">{avatar.style}</p>
