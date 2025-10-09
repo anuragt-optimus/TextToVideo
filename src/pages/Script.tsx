@@ -7,6 +7,23 @@ import { Card } from "@/components/ui/card";
 import { ProgressSteps } from "@/components/ProgressSteps";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 const STEPS = [
   { number: 1, label: "Upload" },
@@ -62,6 +79,11 @@ const Script = () => {
   };
 
   const [generatingSceneId, setGeneratingSceneId] = useState<string | null>(null);
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [currentSceneId, setCurrentSceneId] = useState<string | null>(null);
+  const [userPrompt, setUserPrompt] = useState("");
+  const [selectedToneOverride, setSelectedToneOverride] = useState<string>("");
+  const [selectedLength, setSelectedLength] = useState<string>("medium");
 
   const generateWithAI = async () => {
     if (!uploadedContent) {
@@ -102,14 +124,41 @@ const Script = () => {
     }
   };
 
-  const generateSceneWithAI = async (sceneId: string, sceneIndex: number) => {
+  const generateSceneWithAI = async (
+    sceneId: string, 
+    sceneIndex: number,
+    customPrompt?: string,
+    toneOverride?: string,
+    lengthPreference?: string
+  ) => {
     setGeneratingSceneId(sceneId);
+    setIsDialogOpen(false);
+    
     try {
       const context = uploadedContent || scenes.map(s => s.text).join(' ');
+      
+      // Build enhanced prompt
+      let enhancedPrompt = `Generate content for scene ${sceneIndex + 1} of a video script.`;
+      
+      if (customPrompt) {
+        enhancedPrompt += ` User instructions: ${customPrompt}.`;
+      }
+      
+      if (lengthPreference) {
+        const lengthMap: Record<string, string> = {
+          short: "Keep it brief, around 10 seconds",
+          medium: "Make it medium length, around 15 seconds",
+          long: "Make it detailed, around 20 seconds"
+        };
+        enhancedPrompt += ` ${lengthMap[lengthPreference]}.`;
+      }
+      
+      enhancedPrompt += ` Context: ${context}`;
+      
       const { data, error } = await supabase.functions.invoke("generate-script", {
         body: { 
-          content: `Generate content for scene ${sceneIndex + 1} of a video script. Context: ${context}`,
-          tone: uploadedTone 
+          content: enhancedPrompt,
+          tone: toneOverride || uploadedTone 
         },
       });
 
@@ -182,16 +231,113 @@ const Script = () => {
                       </span>
                     </div>
                     <div className="flex gap-2">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => generateSceneWithAI(scene.id, index)}
-                        disabled={generatingSceneId === scene.id}
-                        className="gap-2"
-                      >
-                        <Wand2 className="w-4 h-4" />
-                        {generatingSceneId === scene.id ? "Generating..." : "Generate with AI"}
-                      </Button>
+                      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+                        <DialogTrigger asChild>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => {
+                              setCurrentSceneId(scene.id);
+                              setUserPrompt("");
+                              setSelectedToneOverride("");
+                              setSelectedLength("medium");
+                            }}
+                            disabled={generatingSceneId === scene.id}
+                            className="gap-2"
+                          >
+                            <Wand2 className="w-4 h-4" />
+                            {generatingSceneId === scene.id ? "Generating..." : "Generate with AI"}
+                          </Button>
+                        </DialogTrigger>
+                        <DialogContent className="sm:max-w-[500px]">
+                          <DialogHeader>
+                            <DialogTitle>Generate Scene Content with AI</DialogTitle>
+                            <DialogDescription>
+                              Provide instructions to customize how AI generates this scene
+                            </DialogDescription>
+                          </DialogHeader>
+                          
+                          <div className="space-y-4 py-4">
+                            <div className="space-y-2">
+                              <Label htmlFor="prompt">Custom Instructions (Optional)</Label>
+                              <Textarea
+                                id="prompt"
+                                placeholder="e.g., Make it more technical, focus on benefits, add a call-to-action..."
+                                value={userPrompt}
+                                onChange={(e) => setUserPrompt(e.target.value)}
+                                className="min-h-[100px]"
+                              />
+                            </div>
+                            
+                            <div className="space-y-2">
+                              <Label htmlFor="tone">Tone</Label>
+                              <Select value={selectedToneOverride} onValueChange={setSelectedToneOverride}>
+                                <SelectTrigger id="tone">
+                                  <SelectValue placeholder={`Use uploaded tone (${uploadedTone})`} />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="">Use uploaded tone ({uploadedTone})</SelectItem>
+                                  <SelectItem value="Professional">Professional</SelectItem>
+                                  <SelectItem value="Casual">Casual</SelectItem>
+                                  <SelectItem value="Friendly">Friendly</SelectItem>
+                                  <SelectItem value="Enthusiastic">Enthusiastic</SelectItem>
+                                  <SelectItem value="Narrative">Narrative</SelectItem>
+                                </SelectContent>
+                              </Select>
+                            </div>
+                            
+                            <div className="space-y-2">
+                              <Label htmlFor="length">Preferred Length</Label>
+                              <Select value={selectedLength} onValueChange={setSelectedLength}>
+                                <SelectTrigger id="length">
+                                  <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="short">Short (~10s)</SelectItem>
+                                  <SelectItem value="medium">Medium (~15s)</SelectItem>
+                                  <SelectItem value="long">Long (~20s)</SelectItem>
+                                </SelectContent>
+                              </Select>
+                            </div>
+                            
+                            {scene.text && (
+                              <div className="space-y-2">
+                                <Label>Current Scene</Label>
+                                <div className="text-sm text-muted-foreground p-3 bg-muted rounded-md max-h-[100px] overflow-y-auto">
+                                  {scene.text}
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                          
+                          <div className="flex justify-end gap-2">
+                            <Button
+                              variant="outline"
+                              onClick={() => setIsDialogOpen(false)}
+                            >
+                              Cancel
+                            </Button>
+                            <Button 
+                              onClick={() => {
+                                if (currentSceneId) {
+                                  const sceneIndex = scenes.findIndex(s => s.id === currentSceneId);
+                                  generateSceneWithAI(
+                                    currentSceneId, 
+                                    sceneIndex, 
+                                    userPrompt, 
+                                    selectedToneOverride, 
+                                    selectedLength
+                                  );
+                                }
+                              }}
+                              disabled={generatingSceneId === scene.id}
+                            >
+                              Generate
+                            </Button>
+                          </div>
+                        </DialogContent>
+                      </Dialog>
+                      
                       {scenes.length > 1 && (
                         <Button
                           variant="ghost"
