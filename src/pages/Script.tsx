@@ -359,7 +359,7 @@ const Script = () => {
             {/* Sidebar */}
             <div className="space-y-6">
               <Card className="p-6">
-                <h3 className="font-semibold mb-4">Statistics</h3>
+                <h3 className="font-semibold mb-4">Script Details</h3>
                 <div className="space-y-4">
                   <div>
                     <div className="text-sm text-muted-foreground mb-1">Word Count</div>
