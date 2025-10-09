@@ -16,6 +16,45 @@ const STEPS = [
   { number: 6, label: "Export" },
 ];
 
+const VOICE_CONFIG: Record<string, { preferredNames: string[], pitch: number, rate: number, gender: string }> = {
+  alex: { 
+    preferredNames: ['Google US English', 'Microsoft David', 'Alex'],
+    pitch: 1.0,
+    rate: 1.0,
+    gender: 'male'
+  },
+  dana: { 
+    preferredNames: ['Google UK English Female', 'Microsoft Zira', 'Samantha'],
+    pitch: 1.1,
+    rate: 0.95,
+    gender: 'female'
+  },
+  sam: { 
+    preferredNames: ['Google US English', 'Microsoft Mark'],
+    pitch: 1.2,
+    rate: 1.1,
+    gender: 'male'
+  },
+  morgan: { 
+    preferredNames: ['Google UK English Female', 'Microsoft Hazel'],
+    pitch: 0.9,
+    rate: 0.9,
+    gender: 'female'
+  },
+  jordan: { 
+    preferredNames: ['Google US English', 'Microsoft David'],
+    pitch: 0.8,
+    rate: 0.95,
+    gender: 'male'
+  },
+  casey: { 
+    preferredNames: ['Google UK English Female', 'Microsoft Zira'],
+    pitch: 1.0,
+    rate: 1.0,
+    gender: 'female'
+  }
+};
+
 const VOICES = [
   { id: "alex", name: "Alex", tone: "Conversational", recommended: true },
   { id: "dana", name: "Dana", tone: "Professional", recommended: true },
@@ -25,41 +64,104 @@ const VOICES = [
   { id: "casey", name: "Casey", tone: "Friendly", recommended: false },
 ];
 
+const SAMPLE_TEXT = "Welcome to your AI video creator. This is how your voice will sound in the final video. Let's create something amazing together!";
+
 const Voice = () => {
   const navigate = useNavigate();
   const [selectedVoice, setSelectedVoice] = useState<string | null>(null);
   const [playingVoice, setPlayingVoice] = useState<string | null>(null);
   const [progress, setProgress] = useState<{ [key: string]: number }>({});
+  const [availableVoices, setAvailableVoices] = useState<SpeechSynthesisVoice[]>([]);
 
   useEffect(() => {
-    if (!playingVoice) return;
+    const loadVoices = () => {
+      const voices = window.speechSynthesis.getVoices();
+      setAvailableVoices(voices);
+    };
+    
+    loadVoices();
+    window.speechSynthesis.onvoiceschanged = loadVoices;
+    
+    return () => {
+      window.speechSynthesis.cancel();
+    };
+  }, []);
 
-    const duration = 8000; // 8 seconds
-    const intervalTime = 100;
-    let elapsed = 0;
+  const findBestVoiceMatch = (
+    voiceId: string,
+    voices: SpeechSynthesisVoice[]
+  ): SpeechSynthesisVoice | null => {
+    const config = VOICE_CONFIG[voiceId];
+    if (!config) return null;
 
-    const interval = setInterval(() => {
-      elapsed += intervalTime;
-      const currentProgress = Math.min(elapsed / duration, 1);
-      
-      setProgress(prev => ({ ...prev, [playingVoice]: currentProgress }));
-
-      if (currentProgress >= 1) {
-        setPlayingVoice(null);
-        setProgress(prev => ({ ...prev, [playingVoice]: 0 }));
-      }
-    }, intervalTime);
-
-    return () => clearInterval(interval);
-  }, [playingVoice]);
+    for (const name of config.preferredNames) {
+      const match = voices.find(v => v.name.includes(name));
+      if (match) return match;
+    }
+    
+    const genderMatches = voices.filter(v => 
+      v.lang.startsWith('en') && 
+      (config.gender === 'female' ? v.name.toLowerCase().includes('female') : true)
+    );
+    
+    return genderMatches[0] || voices.find(v => v.lang.startsWith('en')) || voices[0];
+  };
 
   const handlePlayPause = (voiceId: string) => {
     if (playingVoice === voiceId) {
+      window.speechSynthesis.cancel();
       setPlayingVoice(null);
-    } else {
+      return;
+    }
+    
+    if (playingVoice) {
+      window.speechSynthesis.cancel();
+    }
+    
+    const newUtterance = new SpeechSynthesisUtterance(SAMPLE_TEXT);
+    
+    const voiceConfig = VOICE_CONFIG[voiceId];
+    const bestVoice = findBestVoiceMatch(voiceId, availableVoices);
+    
+    if (bestVoice) {
+      newUtterance.voice = bestVoice;
+    }
+    
+    newUtterance.pitch = voiceConfig.pitch;
+    newUtterance.rate = voiceConfig.rate;
+    
+    const estimatedDuration = (SAMPLE_TEXT.length / 15) * 1000;
+    let startTime = Date.now();
+    
+    const progressInterval = setInterval(() => {
+      const elapsed = Date.now() - startTime;
+      const currentProgress = Math.min(elapsed / estimatedDuration, 1);
+      setProgress(prev => ({ ...prev, [voiceId]: currentProgress }));
+      
+      if (currentProgress >= 1 || playingVoice !== voiceId) {
+        clearInterval(progressInterval);
+      }
+    }, 100);
+    
+    newUtterance.onstart = () => {
       setPlayingVoice(voiceId);
       setProgress(prev => ({ ...prev, [voiceId]: 0 }));
-    }
+    };
+    
+    newUtterance.onend = () => {
+      setPlayingVoice(null);
+      setProgress(prev => ({ ...prev, [voiceId]: 0 }));
+      clearInterval(progressInterval);
+    };
+    
+    newUtterance.onerror = (error) => {
+      console.error('Speech synthesis error:', error);
+      setPlayingVoice(null);
+      setProgress(prev => ({ ...prev, [voiceId]: 0 }));
+      clearInterval(progressInterval);
+    };
+    
+    window.speechSynthesis.speak(newUtterance);
   };
 
   return (
