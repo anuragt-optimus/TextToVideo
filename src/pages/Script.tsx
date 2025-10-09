@@ -61,6 +61,8 @@ const Script = () => {
     }
   };
 
+  const [generatingSceneId, setGeneratingSceneId] = useState<string | null>(null);
+
   const generateWithAI = async () => {
     if (!uploadedContent) {
       toast({
@@ -97,6 +99,45 @@ const Script = () => {
       });
     } finally {
       setIsGenerating(false);
+    }
+  };
+
+  const generateSceneWithAI = async (sceneId: string, sceneIndex: number) => {
+    setGeneratingSceneId(sceneId);
+    try {
+      const context = uploadedContent || scenes.map(s => s.text).join(' ');
+      const { data, error } = await supabase.functions.invoke("generate-script", {
+        body: { 
+          content: `Generate content for scene ${sceneIndex + 1} of a video script. Context: ${context}`,
+          tone: uploadedTone 
+        },
+      });
+
+      if (error) {
+        throw error;
+      }
+
+      if (data?.scenes && data.scenes.length > 0) {
+        const generatedScene = data.scenes[0];
+        setScenes(scenes.map(scene => 
+          scene.id === sceneId 
+            ? { ...scene, text: generatedScene.text, duration: generatedScene.duration }
+            : scene
+        ));
+        toast({
+          title: "Scene generated!",
+          description: "AI has generated content for this scene",
+        });
+      }
+    } catch (error) {
+      console.error("Error generating scene:", error);
+      toast({
+        title: "Generation failed",
+        description: error instanceof Error ? error.message : "Failed to generate scene",
+        variant: "destructive",
+      });
+    } finally {
+      setGeneratingSceneId(null);
     }
   };
 
@@ -140,16 +181,28 @@ const Script = () => {
                         Scene {index + 1} • ~{scene.duration}s
                       </span>
                     </div>
-                    {scenes.length > 1 && (
+                    <div className="flex gap-2">
                       <Button
-                        variant="ghost"
+                        variant="outline"
                         size="sm"
-                        onClick={() => deleteScene(scene.id)}
-                        className="text-destructive hover:text-destructive"
+                        onClick={() => generateSceneWithAI(scene.id, index)}
+                        disabled={generatingSceneId === scene.id}
+                        className="gap-2"
                       >
-                        <Trash2 className="w-4 h-4" />
+                        <Wand2 className="w-4 h-4" />
+                        {generatingSceneId === scene.id ? "Generating..." : "Generate with AI"}
                       </Button>
-                    )}
+                      {scenes.length > 1 && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => deleteScene(scene.id)}
+                          className="text-destructive hover:text-destructive"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      )}
+                    </div>
                   </div>
                   <Textarea
                     value={scene.text}
