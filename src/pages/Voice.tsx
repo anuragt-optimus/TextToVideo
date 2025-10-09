@@ -83,7 +83,7 @@ const Voice = () => {
                   }}
                 >
                   <Play className="w-4 h-4" />
-                  Preview
+                  Play
                 </Button>
               </Card>
             ))}
