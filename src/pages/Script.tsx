@@ -1,10 +1,12 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { Wand2, Plus, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Card } from "@/components/ui/card";
 import { ProgressSteps } from "@/components/ProgressSteps";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
 
 const STEPS = [
   { number: 1, label: "Upload" },
@@ -23,11 +25,17 @@ interface Scene {
 
 const Script = () => {
   const navigate = useNavigate();
+  const location = useLocation();
+  const { toast } = useToast();
+  const [isGenerating, setIsGenerating] = useState(false);
   const [scenes, setScenes] = useState<Scene[]>([
     { id: "1", text: "Welcome to our revolutionary AI video platform. Today, we're going to show you how easy it is to transform any content into professional talking-head videos.", duration: 15 },
     { id: "2", text: "With our advanced AI technology, you can upload documents, paste text, or even start from scratch. The platform automatically generates a natural-sounding script optimized for video.", duration: 18 },
     { id: "3", text: "Choose from multiple AI voices, customize your avatar, and export in any format you need. It's that simple to create engaging video content at scale.", duration: 16 },
   ]);
+
+  const uploadedContent = location.state?.content || "";
+  const uploadedTone = location.state?.tone || "Professional";
 
   const totalDuration = scenes.reduce((sum, scene) => sum + scene.duration, 0);
   const totalWords = scenes.reduce((sum, scene) => sum + scene.text.split(' ').length, 0);
@@ -53,6 +61,45 @@ const Script = () => {
     }
   };
 
+  const generateWithAI = async () => {
+    if (!uploadedContent) {
+      toast({
+        title: "No content available",
+        description: "Please upload or paste content first",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsGenerating(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("generate-script", {
+        body: { content: uploadedContent, tone: uploadedTone },
+      });
+
+      if (error) {
+        throw error;
+      }
+
+      if (data?.scenes) {
+        setScenes(data.scenes);
+        toast({
+          title: "Script generated!",
+          description: "Your AI-generated script is ready to edit",
+        });
+      }
+    } catch (error) {
+      console.error("Error generating script:", error);
+      toast({
+        title: "Generation failed",
+        description: error instanceof Error ? error.message : "Failed to generate script",
+        variant: "destructive",
+      });
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gradient-subtle">
       <div className="max-w-7xl mx-auto px-6 py-8">
@@ -66,10 +113,17 @@ const Script = () => {
                 Review and edit your AI-generated script
               </p>
             </div>
-            <Button variant="outline" className="gap-2">
-              <Wand2 className="w-4 h-4" />
-              Rewrite with AI
-            </Button>
+            <div className="flex gap-2">
+              <Button 
+                variant="outline" 
+                className="gap-2"
+                onClick={generateWithAI}
+                disabled={isGenerating || !uploadedContent}
+              >
+                <Wand2 className="w-4 h-4" />
+                {isGenerating ? "Generating..." : "Generate with AI"}
+              </Button>
+            </div>
           </div>
 
           <div className="grid lg:grid-cols-4 gap-8">

@@ -57,8 +57,22 @@ const Upload = () => {
       return;
     }
     
-    toast.success(`File "${file.name}" uploaded successfully!`);
-    setTimeout(() => navigate("/script"), 1500);
+    // Read file content
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const content = e.target?.result as string;
+      toast.success(`File "${file.name}" uploaded successfully!`);
+      setTimeout(() => {
+        navigate("/script", { 
+          state: { 
+            content: content || "File content extracted", 
+            tone: selectedTone,
+            fileName: file.name
+          } 
+        });
+      }, 1500);
+    };
+    reader.readAsText(file);
   };
 
   const handleNext = () => {
@@ -66,7 +80,12 @@ const Upload = () => {
       toast.error("Please upload a file or enter some text to continue.");
       return;
     }
-    navigate("/script");
+    navigate("/script", { 
+      state: { 
+        content: textInput, 
+        tone: selectedTone 
+      } 
+    });
   };
 
   return (
