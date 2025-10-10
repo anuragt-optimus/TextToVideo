@@ -3,7 +3,6 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
-import Welcome from "./pages/Welcome";
 import Upload from "./pages/Upload";
 import Script from "./pages/Script";
 import Voice from "./pages/Voice";
@@ -21,7 +20,7 @@ const App = () => (
       <Sonner />
       <BrowserRouter>
         <Routes>
-          <Route path="/" element={<Welcome />} />
+          <Route path="/" element={<Upload />} />
           <Route path="/upload" element={<Upload />} />
           <Route path="/script" element={<Script />} />
           <Route path="/voice" element={<Voice />} />
