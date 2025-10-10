@@ -76,23 +76,42 @@ const Upload = () => {
       });
     }, 100);
     
-    // Read file content
-    const reader = new FileReader();
-    reader.onload = (e) => {
+    // Check if file is binary (image/video) or text-based
+    const binaryExtensions = ['.jpg', '.jpeg', '.png', '.mp4'];
+    const isBinaryFile = binaryExtensions.includes(fileExt);
+    
+    if (isBinaryFile) {
+      // For binary files (images/videos), don't try to read as text
       clearInterval(progressInterval);
       setUploadProgress(100);
       
       setTimeout(() => {
-        const content = e.target?.result as string;
-        setTextInput(content || "File content extracted");
         setUploadedFileName(file.name);
+        // Don't set textInput for binary files - prevents garbled data
         setIsUploading(false);
         setUploadProgress(0);
         toast.success(`File "${file.name}" uploaded successfully!`);
         setActiveTab("type");
       }, 300);
-    };
-    reader.readAsText(file);
+    } else {
+      // For text-based files, read the content
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        clearInterval(progressInterval);
+        setUploadProgress(100);
+        
+        setTimeout(() => {
+          const content = e.target?.result as string;
+          setTextInput(content || "File content extracted");
+          setUploadedFileName(file.name);
+          setIsUploading(false);
+          setUploadProgress(0);
+          toast.success(`File "${file.name}" uploaded successfully!`);
+          setActiveTab("type");
+        }, 300);
+      };
+      reader.readAsText(file);
+    }
   };
 
   const handleRemoveFile = () => {
