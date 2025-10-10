@@ -104,7 +104,7 @@ const Upload = () => {
         <div className="w-full max-w-5xl">
           {/* Main Heading */}
           <div className="text-center mb-8">
-            <h1 className="text-5xl font-bold mb-4">What do you want to create?</h1>
+            <h1 className="text-5xl font-bold mb-4">Transform any idea into a compelling video</h1>
             <p className="text-muted-foreground text-lg">
               Type your idea, upload content, or start with a template
             </p>
