@@ -151,8 +151,11 @@ const Upload = () => {
               >
                 <UploadIcon className="w-12 h-12 text-muted-foreground mb-4" />
                 <h3 className="text-lg font-semibold mb-2">Upload Your Content</h3>
-                <p className="text-sm text-muted-foreground text-center mb-4 max-w-md">
+                <p className="text-sm text-muted-foreground text-center mb-2 max-w-md">
                   Drop files here or click to upload. We'll automatically extract the content to generate your script.
+                </p>
+                <p className="text-xs text-muted-foreground text-center mb-4 max-w-lg">
+                  Supported formats: <span className="font-medium">PDF, Word (DOC/DOCX), PowerPoint (PPT/PPTX), Excel (XLSX/CSV), Text (TXT/MD), Images (JPEG/PNG), Video (MP4)</span>
                 </p>
                 
                 <Button onClick={triggerFileUpload} variant="outline">
