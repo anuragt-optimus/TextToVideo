@@ -1,9 +1,10 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Paperclip, FileText, Upload as UploadIcon, Sparkles, Mic, Clock, HelpCircle, Image as ImageIcon, Video } from "lucide-react";
+import { Paperclip, FileText, Upload as UploadIcon, Sparkles, Mic, Clock, HelpCircle, Image as ImageIcon, Video, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Progress } from "@/components/ui/progress";
 import { ScenarioSelector } from "@/components/ScenarioSelector";
 import { DURATION_OPTIONS, Scenario } from "@/data/scenarios";
 import { toast } from "sonner";
@@ -27,6 +28,8 @@ const Upload = () => {
   const [textInput, setTextInput] = useState("");
   const [dragActive, setDragActive] = useState(false);
   const [uploadedFileName, setUploadedFileName] = useState("");
+  const [uploadProgress, setUploadProgress] = useState(0);
+  const [isUploading, setIsUploading] = useState(false);
   const [selectedDuration, setSelectedDuration] = useState(60);
   const [activeTab, setActiveTab] = useState("type");
 
@@ -59,16 +62,43 @@ const Upload = () => {
       return;
     }
     
+    setIsUploading(true);
+    setUploadProgress(0);
+    
+    // Simulate upload progress
+    const progressInterval = setInterval(() => {
+      setUploadProgress((prev) => {
+        if (prev >= 90) {
+          clearInterval(progressInterval);
+          return prev;
+        }
+        return prev + 10;
+      });
+    }, 100);
+    
     // Read file content
     const reader = new FileReader();
     reader.onload = (e) => {
-      const content = e.target?.result as string;
-      setTextInput(content || "File content extracted");
-      setUploadedFileName(file.name);
-      toast.success(`File "${file.name}" uploaded successfully!`);
-      setActiveTab("type");
+      clearInterval(progressInterval);
+      setUploadProgress(100);
+      
+      setTimeout(() => {
+        const content = e.target?.result as string;
+        setTextInput(content || "File content extracted");
+        setUploadedFileName(file.name);
+        setIsUploading(false);
+        setUploadProgress(0);
+        toast.success(`File "${file.name}" uploaded successfully!`);
+        setActiveTab("type");
+      }, 300);
     };
     reader.readAsText(file);
+  };
+
+  const handleRemoveFile = () => {
+    setUploadedFileName("");
+    setTextInput("");
+    toast.info("File removed");
   };
 
   const handleScenarioSelect = (scenario: Scenario) => {
@@ -158,14 +188,31 @@ const Upload = () => {
                   Supported formats: <span className="font-medium">PDF, Word (DOC/DOCX), PowerPoint (PPT/PPTX), Excel (XLSX/CSV), Text (TXT/MD), Images (JPEG/PNG), Video (MP4)</span>
                 </p>
                 
-                <Button onClick={triggerFileUpload} variant="outline">
+                <Button onClick={triggerFileUpload} variant="outline" disabled={isUploading}>
                   Choose File
                 </Button>
 
-                {uploadedFileName && (
-                  <div className="mt-4 flex items-center gap-2 text-sm text-primary">
-                    <FileText className="w-4 h-4" />
-                    <span>{uploadedFileName}</span>
+                {isUploading && (
+                  <div className="mt-4 w-full max-w-md">
+                    <div className="flex items-center justify-between text-xs text-muted-foreground mb-2">
+                      <span>Uploading...</span>
+                      <span>{uploadProgress}%</span>
+                    </div>
+                    <Progress value={uploadProgress} className="h-2" />
+                  </div>
+                )}
+
+                {uploadedFileName && !isUploading && (
+                  <div className="mt-4 flex items-center gap-3 bg-primary/10 px-4 py-3 rounded-lg border border-primary/20">
+                    <FileText className="w-5 h-5 text-primary flex-shrink-0" />
+                    <span className="text-sm font-medium text-foreground flex-1 truncate">{uploadedFileName}</span>
+                    <button
+                      onClick={handleRemoveFile}
+                      className="flex-shrink-0 w-6 h-6 rounded-full bg-muted hover:bg-destructive/20 flex items-center justify-center transition-colors group"
+                      aria-label="Remove file"
+                    >
+                      <X className="w-4 h-4 text-muted-foreground group-hover:text-destructive" />
+                    </button>
                   </div>
                 )}
 
