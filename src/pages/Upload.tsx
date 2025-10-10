@@ -27,7 +27,7 @@ const Upload = () => {
   const [selectedTone, setSelectedTone] = useState("professional");
   const [textInput, setTextInput] = useState("");
   const [dragActive, setDragActive] = useState(false);
-  const [uploadedFileName, setUploadedFileName] = useState("");
+  const [uploadedFiles, setUploadedFiles] = useState<Array<{id: string, name: string, type: 'text' | 'binary'}>>([]);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [isUploading, setIsUploading] = useState(false);
   const [selectedDuration, setSelectedDuration] = useState(60);
@@ -48,8 +48,16 @@ const Upload = () => {
     e.stopPropagation();
     setDragActive(false);
     
-    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
-      handleFile(e.dataTransfer.files[0]);
+    if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+      const files = Array.from(e.dataTransfer.files);
+      const remainingSlots = 10 - uploadedFiles.length;
+      
+      if (files.length > remainingSlots) {
+        toast.error(`You can only upload up to 10 files total. You can add ${remainingSlots} more file${remainingSlots !== 1 ? 's' : ''}.`);
+        files.slice(0, remainingSlots).forEach(handleFile);
+      } else {
+        files.forEach(handleFile);
+      }
     }
   };
 
@@ -59,6 +67,11 @@ const Upload = () => {
     
     if (!validTypes.includes(fileExt)) {
       toast.error("Invalid file type. Please upload a supported file (PDF, Word, PowerPoint, text, image, video, or spreadsheet).");
+      return;
+    }
+
+    if (uploadedFiles.length >= 10) {
+      toast.error("Maximum 10 files allowed.");
       return;
     }
     
@@ -79,6 +92,7 @@ const Upload = () => {
     // Check if file is binary (image/video) or text-based
     const binaryExtensions = ['.jpg', '.jpeg', '.png', '.mp4'];
     const isBinaryFile = binaryExtensions.includes(fileExt);
+    const fileId = `${Date.now()}-${Math.random()}`;
     
     if (isBinaryFile) {
       // For binary files (images/videos), don't try to read as text
@@ -86,8 +100,7 @@ const Upload = () => {
       setUploadProgress(100);
       
       setTimeout(() => {
-        setUploadedFileName(file.name);
-        // Don't set textInput for binary files - prevents garbled data
+        setUploadedFiles(prev => [...prev, { id: fileId, name: file.name, type: 'binary' }]);
         setIsUploading(false);
         setUploadProgress(0);
         toast.success(`File "${file.name}" uploaded successfully!`);
@@ -102,8 +115,10 @@ const Upload = () => {
         
         setTimeout(() => {
           const content = e.target?.result as string;
-          setTextInput(content || "File content extracted");
-          setUploadedFileName(file.name);
+          const currentText = textInput.trim();
+          const newText = currentText ? `${currentText}\n\n--- From ${file.name} ---\n${content}` : content;
+          setTextInput(newText || "File content extracted");
+          setUploadedFiles(prev => [...prev, { id: fileId, name: file.name, type: 'text' }]);
           setIsUploading(false);
           setUploadProgress(0);
           toast.success(`File "${file.name}" uploaded successfully!`);
@@ -114,10 +129,15 @@ const Upload = () => {
     }
   };
 
-  const handleRemoveFile = () => {
-    setUploadedFileName("");
-    setTextInput("");
+  const handleRemoveFile = (fileId: string) => {
+    setUploadedFiles(prev => prev.filter(f => f.id !== fileId));
     toast.info("File removed");
+  };
+
+  const handleClearAllFiles = () => {
+    setUploadedFiles([]);
+    setTextInput("");
+    toast.info("All files removed");
   };
 
   const handleScenarioSelect = (scenario: Scenario) => {
@@ -137,7 +157,7 @@ const Upload = () => {
       state: { 
         content: textInput, 
         tone: selectedTone,
-        fileName: uploadedFileName,
+        files: uploadedFiles,
         duration: selectedDuration
       } 
     });
@@ -201,7 +221,7 @@ const Upload = () => {
                 <UploadIcon className="w-12 h-12 text-muted-foreground mb-4" />
                 <h3 className="text-lg font-semibold mb-2">Upload Your Content</h3>
                 <p className="text-sm text-muted-foreground text-center mb-2 max-w-md">
-                  Drop files here or click to upload. We'll automatically extract the content to generate your script.
+                  Drop up to 10 files here or click to upload. We'll automatically extract the content to generate your script.
                 </p>
                 <p className="text-xs text-muted-foreground text-center mb-4 max-w-lg">
                   Supported formats: <span className="font-medium">PDF, Word (DOC/DOCX), PowerPoint (PPT/PPTX), Excel (XLSX/CSV), Text (TXT/MD), Images (JPEG/PNG), Video (MP4)</span>
@@ -221,26 +241,70 @@ const Upload = () => {
                   </div>
                 )}
 
-                {uploadedFileName && !isUploading && (
-                  <div className="mt-4 flex items-center gap-3 bg-primary/10 px-4 py-3 rounded-lg border border-primary/20">
-                    <FileText className="w-5 h-5 text-primary flex-shrink-0" />
-                    <span className="text-sm font-medium text-foreground flex-1 truncate">{uploadedFileName}</span>
-                    <button
-                      onClick={handleRemoveFile}
-                      className="flex-shrink-0 w-6 h-6 rounded-full bg-muted hover:bg-destructive/20 flex items-center justify-center transition-colors group"
-                      aria-label="Remove file"
-                    >
-                      <X className="w-4 h-4 text-muted-foreground group-hover:text-destructive" />
-                    </button>
+                {uploadedFiles.length > 0 && !isUploading && (
+                  <div className="mt-4 w-full max-w-2xl space-y-3">
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm font-medium text-muted-foreground">
+                        {uploadedFiles.length} file{uploadedFiles.length !== 1 ? 's' : ''} uploaded
+                      </span>
+                      {uploadedFiles.length > 1 && (
+                        <Button 
+                          onClick={handleClearAllFiles} 
+                          variant="ghost" 
+                          size="sm"
+                          className="h-7 text-xs"
+                        >
+                          Clear All
+                        </Button>
+                      )}
+                    </div>
+                    <div className="grid gap-2 max-h-40 overflow-y-auto">
+                      {uploadedFiles.map((file) => (
+                        <div 
+                          key={file.id} 
+                          className="flex items-center gap-3 bg-primary/10 px-4 py-3 rounded-lg border border-primary/20"
+                        >
+                          {file.type === 'binary' ? (
+                            <ImageIcon className="w-5 h-5 text-primary flex-shrink-0" />
+                          ) : (
+                            <FileText className="w-5 h-5 text-primary flex-shrink-0" />
+                          )}
+                          <span className="text-sm font-medium text-foreground flex-1 truncate">
+                            {file.name}
+                          </span>
+                          <button
+                            onClick={() => handleRemoveFile(file.id)}
+                            className="flex-shrink-0 w-6 h-6 rounded-full bg-muted hover:bg-destructive/20 flex items-center justify-center transition-colors group"
+                            aria-label="Remove file"
+                          >
+                            <X className="w-4 h-4 text-muted-foreground group-hover:text-destructive" />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
                   </div>
                 )}
 
                 <input
                   id="file-input"
                   type="file"
+                  multiple
                   className="hidden"
                   accept=".pdf,.doc,.docx,.ppt,.pptx,.txt,.md,.jpg,.jpeg,.png,.mp4,.xlsx,.csv"
-                  onChange={(e) => e.target.files?.[0] && handleFile(e.target.files[0])}
+                  onChange={(e) => {
+                    if (e.target.files && e.target.files.length > 0) {
+                      const files = Array.from(e.target.files);
+                      const remainingSlots = 10 - uploadedFiles.length;
+                      
+                      if (files.length > remainingSlots) {
+                        toast.error(`You can only upload up to 10 files total. Adding the first ${remainingSlots} file${remainingSlots !== 1 ? 's' : ''}.`);
+                        files.slice(0, remainingSlots).forEach(handleFile);
+                      } else {
+                        files.forEach(handleFile);
+                      }
+                      e.target.value = '';
+                    }
+                  }}
                 />
               </div>
 
