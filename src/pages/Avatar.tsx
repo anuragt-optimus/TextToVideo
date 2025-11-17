@@ -11,10 +11,9 @@ import { Badge } from "@/components/ui/badge";
 const STEPS = [
   { number: 1, label: "Upload" },
   { number: 2, label: "Script" },
-  { number: 3, label: "Voice" },
-  { number: 4, label: "Avatar" },
-  { number: 5, label: "Preview" },
-  { number: 6, label: "Export" },
+  { number: 3, label: "Avatar" },
+  { number: 4, label: "Preview" },
+  { number: 5, label: "Export" },
 ];
 
 const PRESET_AVATARS = [
@@ -47,13 +46,13 @@ const Avatar = () => {
   return (
     <div className="min-h-screen bg-gradient-subtle">
       <div className="max-w-7xl mx-auto px-6 py-12">
-        <ProgressSteps currentStep={4} steps={STEPS} />
+        <ProgressSteps currentStep={3} steps={STEPS} />
 
         <div className="max-w-6xl mx-auto mt-16">
           <div className="text-center mb-12">
             <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 text-primary mb-4">
               <Sparkles className="w-4 h-4" />
-              <span className="text-sm font-medium">Step 4 of 6</span>
+              <span className="text-sm font-medium">Step 3 of 5</span>
             </div>
             <h1 className="text-5xl font-bold mb-4 bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-transparent">
               Choose Your Avatar

@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Card } from "@/components/ui/card";
 import { ProgressSteps } from "@/components/ProgressSteps";
-import { supabase } from "@/integrations/supabase/client";
+// import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import {
   Dialog,
@@ -28,10 +28,9 @@ import {
 const STEPS = [
   { number: 1, label: "Upload" },
   { number: 2, label: "Script" },
-  { number: 3, label: "Voice" },
-  { number: 4, label: "Avatar" },
-  { number: 5, label: "Preview" },
-  { number: 6, label: "Export" },
+  { number: 3, label: "Avatar" },
+  { number: 4, label: "Preview" },
+  { number: 5, label: "Export" },
 ];
 
 interface Scene {
@@ -91,44 +90,7 @@ const [scenes, setScenes] = useState<Scene[]>(
   const [selectedToneOverride, setSelectedToneOverride] = useState<string>("default");
   const [selectedLength, setSelectedLength] = useState<string>("medium");
 
-  const generateWithAI = async () => {
-    if (!uploadedContent) {
-      toast({
-        title: "No content available",
-        description: "Please upload or paste content first",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    setIsGenerating(true);
-    try {
-      const { data, error } = await supabase.functions.invoke("generate-script", {
-        body: { content: uploadedContent, tone: uploadedTone },
-      });
-
-      if (error) {
-        throw error;
-      }
-
-      if (data?.scenes) {
-        setScenes(data.scenes);
-        toast({
-          title: "Script generated!",
-          description: "Your AI-generated script is ready to edit",
-        });
-      }
-    } catch (error) {
-      console.error("Error generating script:", error);
-      toast({
-        title: "Generation failed",
-        description: error instanceof Error ? error.message : "Failed to generate script",
-        variant: "destructive",
-      });
-    } finally {
-      setIsGenerating(false);
-    }
-  };
+  
 
   const generateSceneWithAI = async (
   sceneId: string,
@@ -413,8 +375,8 @@ const [scenes, setScenes] = useState<Scene[]>(
             <Button variant="outline" onClick={() => navigate("/upload")}>
               Back
             </Button>
-            <Button size="lg" onClick={() => navigate("/voice")} className="px-8">
-              Next: Choose Voice
+            <Button size="lg" onClick={() => navigate("/avatar")} className="px-8">
+              Next: Choose Avatar
             </Button>
           </div>
         </div>
