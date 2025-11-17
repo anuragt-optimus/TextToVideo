@@ -45,11 +45,17 @@ const Script = () => {
   const location = useLocation();
   const { toast } = useToast();
   const [isGenerating, setIsGenerating] = useState(false);
-  const [scenes, setScenes] = useState<Scene[]>([
-    { id: "1", text: "Welcome to our revolutionary AI video platform. Today, we're going to show you how easy it is to transform any content into professional talking-head videos.", duration: 15 },
-    { id: "2", text: "With our advanced AI technology, you can upload documents, paste text, or even start from scratch. The platform automatically generates a natural-sounding script optimized for video.", duration: 18 },
-    { id: "3", text: "Choose from multiple AI voices, customize your avatar, and export in any format you need. It's that simple to create engaging video content at scale.", duration: 16 },
-  ]);
+  const apiScenes = location.state?.apiResponse?.data?.scenes || [];
+
+const [scenes, setScenes] = useState<Scene[]>(
+  apiScenes.length > 0
+    ? apiScenes.map((s: any) => ({
+        id: String(s.scene_number),
+        text: s.scene_content,
+        duration: Math.ceil((s.scene_content.split(" ").length || 0) * 0.4), // approx 0.4 sec/word
+      }))
+    : []
+);
 
   const uploadedContent = location.state?.content || "";
   const uploadedTone = location.state?.tone || "Professional";
@@ -125,70 +131,94 @@ const Script = () => {
   };
 
   const generateSceneWithAI = async (
-    sceneId: string, 
-    sceneIndex: number,
-    customPrompt?: string,
-    toneOverride?: string,
-    lengthPreference?: string
-  ) => {
-    setGeneratingSceneId(sceneId);
-    setIsDialogOpen(false);
-    
-    try {
-      const context = uploadedContent || scenes.map(s => s.text).join(' ');
-      
-      // Build enhanced prompt
-      let enhancedPrompt = `Generate content for scene ${sceneIndex + 1} of a video script.`;
-      
-      if (customPrompt) {
-        enhancedPrompt += ` User instructions: ${customPrompt}.`;
-      }
-      
-      if (lengthPreference) {
-        const lengthMap: Record<string, string> = {
-          short: "Keep it brief, around 10 seconds",
-          medium: "Make it medium length, around 15 seconds",
-          long: "Make it detailed, around 20 seconds"
-        };
-        enhancedPrompt += ` ${lengthMap[lengthPreference]}.`;
-      }
-      
-      enhancedPrompt += ` Context: ${context}`;
-      
-      const { data, error } = await supabase.functions.invoke("generate-script", {
-        body: { 
-          content: enhancedPrompt,
-          tone: toneOverride && toneOverride !== "default" ? toneOverride : uploadedTone 
+  sceneId: string,
+  sceneIndex: number,
+  customPrompt?: string,
+  toneOverride?: string,
+  lengthPreference?: string
+) => {
+  setGeneratingSceneId(sceneId);
+  setIsDialogOpen(false);
+
+
+  console.log("------Selected Tone Override:", selectedToneOverride);
+
+  try {
+    const scene = scenes.find(s => s.id === sceneId);
+    if (!scene) return;
+
+    // Build request body EXACTLY as API expects
+    const payload = {
+      user_id: "string",
+      session_id: crypto.randomUUID(),
+      previous_prompt_content: scene.text,
+      instruction_prompt: customPrompt || "",
+      duration:
+        lengthPreference === "short"
+          ? 5
+          : lengthPreference === "medium"
+          ? 10
+          : 20,
+      tone: selectedToneOverride,
+    };
+
+    const response = await fetch(
+      "https://ca-texttovideo-prod-use2-1.jollygrass-c5390b44.eastus2.azurecontainerapps.io/api/v1/script/scene/regenerate",
+      {
+        method: "POST",
+        headers: {
+          accept: "application/json",
+          "Content-Type": "application/json",
         },
-      });
-
-      if (error) {
-        throw error;
+        body: JSON.stringify(payload),
       }
+    );
 
-      if (data?.scenes && data.scenes.length > 0) {
-        const generatedScene = data.scenes[0];
-        setScenes(scenes.map(scene => 
-          scene.id === sceneId 
-            ? { ...scene, text: generatedScene.text, duration: generatedScene.duration }
-            : scene
-        ));
-        toast({
-          title: "Scene generated!",
-          description: "AI has generated content for this scene",
-        });
-      }
-    } catch (error) {
-      console.error("Error generating scene:", error);
+    const result = await response.json();
+
+    if (!response.ok) {
       toast({
         title: "Generation failed",
-        description: error instanceof Error ? error.message : "Failed to generate scene",
+        description: "The AI could not regenerate this scene.",
         variant: "destructive",
       });
-    } finally {
-      setGeneratingSceneId(null);
+      return;
     }
-  };
+
+    const newText =
+      result?.data?.regenerated_content ||
+      result?.data?.regenerated_scene_content ||
+      "";
+
+    // Update only one scene
+    setScenes(
+      scenes.map((s) =>
+        s.id === sceneId
+          ? {
+              ...s,
+              text: newText,
+              duration: Math.ceil(newText.split(" ").length * 0.4),
+            }
+          : s
+      )
+    );
+
+    toast({
+      title: "Scene regenerated!",
+      description: "AI updated this scene successfully.",
+    });
+  } catch (err) {
+    console.error(err);
+    toast({
+      title: "Error",
+      description: "Something went wrong while regenerating the scene.",
+      variant: "destructive",
+    });
+  } finally {
+    setGeneratingSceneId(null);
+  }
+};
+
 
   return (
     <div className="min-h-screen bg-gradient-subtle">
@@ -264,11 +294,11 @@ const Script = () => {
                                 </SelectTrigger>
                                 <SelectContent>
                                   <SelectItem value="default">Use uploaded tone ({uploadedTone})</SelectItem>
-                                  <SelectItem value="Professional">Professional</SelectItem>
-                                  <SelectItem value="Casual">Casual</SelectItem>
-                                  <SelectItem value="Friendly">Friendly</SelectItem>
-                                  <SelectItem value="Enthusiastic">Enthusiastic</SelectItem>
-                                  <SelectItem value="Narrative">Narrative</SelectItem>
+                                  <SelectItem value="professional">Professional</SelectItem>
+                                  <SelectItem value="casual">Casual</SelectItem>
+                                  <SelectItem value="friendly">Friendly</SelectItem>
+                                  <SelectItem value="enthusiastic">Enthusiastic</SelectItem>
+                                  <SelectItem value="narrative">Narrative</SelectItem>
                                 </SelectContent>
                               </Select>
                             </div>

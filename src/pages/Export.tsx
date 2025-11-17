@@ -59,40 +59,6 @@ const Export = () => {
             Download your video or publish directly to social media
           </p>
 
-          {/* Format Selection */}
-          <div className="mb-12">
-            <h2 className="text-xl font-semibold mb-6">Select Format(s)</h2>
-            <div className="grid md:grid-cols-3 gap-6">
-              {FORMATS.map((format) => (
-                <Card
-                  key={format.id}
-                  className={`p-6 cursor-pointer transition-all hover:shadow-medium ${
-                    selectedFormats.includes(format.id) ? 'ring-2 ring-primary' : ''
-                  }`}
-                  onClick={() => toggleFormat(format.id)}
-                >
-                  <div className="flex items-start gap-3 mb-4">
-                    <Checkbox 
-                      checked={selectedFormats.includes(format.id)} 
-                      className="mt-1"
-                    />
-                    <div>
-                      <h3 className="font-semibold mb-1">{format.label}</h3>
-                      <p className="text-sm text-muted-foreground">{format.description}</p>
-                    </div>
-                  </div>
-                  
-                  <div className={`aspect-video bg-muted rounded flex items-center justify-center ${
-                    format.id === 'square' ? 'aspect-square' : 
-                    format.id === 'vertical' ? 'aspect-[9/16]' : 'aspect-video'
-                  }`}>
-                    <Video className="w-8 h-8 text-muted-foreground" />
-                  </div>
-                </Card>
-              ))}
-            </div>
-          </div>
-
           {/* Download Options */}
           <div className="mb-12">
             <h2 className="text-xl font-semibold mb-6">Download Options</h2>
@@ -129,53 +95,6 @@ const Export = () => {
               </div>
             </Card>
           </div>
-
-          {/* Publish to Platforms */}
-          <div className="mb-12">
-            <h2 className="text-xl font-semibold mb-6">Publish Integrations</h2>
-            <div className="grid md:grid-cols-3 gap-6">
-              {PLATFORMS.map((platform) => {
-                const Icon = platform.icon;
-                return (
-                  <Card key={platform.id} className="p-6">
-                    <div className="flex flex-col items-center text-center">
-                      <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center mb-3">
-                        <Icon className="w-6 h-6 text-primary" />
-                      </div>
-                      <h3 className="font-semibold mb-3">{platform.label}</h3>
-                      <Button 
-                        variant="outline" 
-                        className="w-full gap-2"
-                        onClick={() => handlePublish(platform.label)}
-                      >
-                        <Share2 className="w-4 h-4" />
-                        Connect
-                      </Button>
-                    </div>
-                  </Card>
-                );
-              })}
-            </div>
-          </div>
-
-          {/* Summary Card */}
-          <Card className="p-6 bg-primary/5 border-primary/20">
-            <h3 className="font-semibold mb-3">Project Summary</h3>
-            <div className="grid md:grid-cols-3 gap-6 text-sm">
-              <div>
-                <span className="text-muted-foreground">Formats Selected:</span>
-                <p className="font-medium">{selectedFormats.length}</p>
-              </div>
-              <div>
-                <span className="text-muted-foreground">Video Duration:</span>
-                <p className="font-medium">49 seconds</p>
-              </div>
-              <div>
-                <span className="text-muted-foreground">Scenes:</span>
-                <p className="font-medium">3</p>
-              </div>
-            </div>
-          </Card>
 
           {/* Action Button */}
           <div className="mt-12 flex justify-center">

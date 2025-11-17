@@ -32,6 +32,10 @@ const Upload = () => {
   const [isUploading, setIsUploading] = useState(false);
   const [selectedDuration, setSelectedDuration] = useState(60);
   const [activeTab, setActiveTab] = useState("type");
+  const [selectedFormat, setSelectedFormat] = useState("horizontal");
+  const [uploadedLogo, setUploadedLogo] = useState<File | null>(null);
+
+
 
   const handleDrag = (e: React.DragEvent) => {
     e.preventDefault();
@@ -148,20 +152,70 @@ const Upload = () => {
     toast.success(`Template "${scenario.name}" loaded!`);
   };
 
-  const handleNext = () => {
-    if (!textInput.trim()) {
-      toast.error("Please describe your idea or upload a file to continue.");
+  const handleNext = async () => {
+  if (!textInput.trim()) {
+    toast.error("Please describe your idea or upload a file to continue.");
+    return;
+  }
+console.log("passed from here")
+  try {
+    const payload = {
+      user_id: "string",
+      session_id: crypto.randomUUID(),
+      extracted_prompt_content: textInput,
+      video_duration: selectedDuration,
+      video_tone: selectedTone,
+      aspect_ratio:
+        selectedFormat === "horizontal"
+          ? "16:9"
+          : selectedFormat === "square"
+          ? "1:1"
+          : "9:16",
+    };
+
+    toast.loading("Generating script...");
+
+    const response = await fetch(
+      "https://ca-texttovideo-prod-use2-1.jollygrass-c5390b44.eastus2.azurecontainerapps.io/api/v1/script/generate",
+      {
+        method: "POST",
+        headers: {
+          accept: "application/json",
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(payload),
+      }
+    );
+
+    const result = await response.json();
+    console.log("API Response:", result);
+    toast.dismiss();
+
+    if (!response.ok) {
+      toast.error("Failed to generate script");
       return;
     }
-    navigate("/script", { 
-      state: { 
-        content: textInput, 
+
+    toast.success("Script generated successfully!");
+
+    navigate("/script", {
+      state: {
+        apiResponse: result,
+        content: textInput,
         tone: selectedTone,
         files: uploadedFiles,
-        duration: selectedDuration
-      } 
+        duration: selectedDuration,
+        format: selectedFormat,
+        logo: uploadedLogo || null,
+      },
     });
-  };
+  } catch (err) {
+    console.error(err);
+    toast.dismiss();
+    toast.error("Something went wrong while generating the script");
+  }
+};
+
 
   const triggerFileUpload = () => {
     document.getElementById('file-input')?.click();
@@ -411,6 +465,121 @@ const Upload = () => {
                 ))}
               </div>
             </div>
+            {/* Format Selector */}
+<div>
+  <div className="flex items-center gap-2 mb-4 mt-6">
+    <Video className="w-4 h-4" />
+    <label className="text-sm font-medium">Video Format</label>
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <HelpCircle className="w-4 h-4 text-muted-foreground cursor-help" />
+      </TooltipTrigger>
+      <TooltipContent>
+        <p>Select the video aspect ratio that best fits your platform.</p>
+      </TooltipContent>
+    </Tooltip>
+  </div>
+  <div className="flex flex-wrap gap-2">
+    {[
+      { id: "horizontal", label: "Horizontal (16:9)" },
+      { id: "square", label: "Square (1:1)" },
+      { id: "vertical", label: "Vertical (9:16)" },
+      
+    ].map((format) => (
+      <button
+        key={format.id}
+        onClick={() => setSelectedFormat(format.id)}
+        className={`
+          px-5 py-2 rounded-full text-sm font-medium transition-all
+          ${selectedFormat === format.id
+            ? 'bg-primary text-primary-foreground'
+            : 'bg-muted text-muted-foreground hover:bg-muted/80'
+          }
+        `}
+      >
+        {format.label}
+      </button>
+    ))}
+  </div>
+</div>
+
+{/* Logo Upload */}
+<div className="mt-8">
+  <div className="flex items-center gap-2 mb-4">
+    <ImageIcon className="w-4 h-4" />
+    <label className="text-sm font-medium">Upload Your Logo (Optional)</label>
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <HelpCircle className="w-4 h-4 text-muted-foreground cursor-help" />
+      </TooltipTrigger>
+      <TooltipContent>
+        <p>Your logo will be added to the final video.</p>
+      </TooltipContent>
+    </Tooltip>
+  </div>
+
+  <div
+    className="
+      relative bg-card rounded-xl border border-border p-6
+      flex flex-col items-center justify-center text-center
+    "
+  >
+    {!uploadedLogo ? (
+      <>
+        <ImageIcon className="w-8 h-8 text-muted-foreground mb-3" />
+        <p className="text-sm text-muted-foreground mb-4">
+          Upload a PNG or JPEG logo
+        </p>
+        <Button
+          variant="outline"
+          onClick={() => document.getElementById('logo-input')?.click()}
+        >
+          Upload Logo
+        </Button>
+      </>
+    ) : (
+      <div className="flex flex-col items-center">
+        <img
+          src={URL.createObjectURL(uploadedLogo)}
+          alt="Logo Preview"
+          className="h-20 object-contain mb-3"
+        />
+        <p className="text-sm font-medium">{uploadedLogo.name}</p>
+
+        <Button
+          variant="ghost"
+          className="mt-3 text-destructive"
+          onClick={() => setUploadedLogo(null)}
+        >
+          Remove Logo
+        </Button>
+      </div>
+    )}
+
+    <input
+      id="logo-input"
+      type="file"
+      accept=".png,.jpg,.jpeg"
+      className="hidden"
+      onChange={(e) => {
+        if (e.target.files && e.target.files[0]) {
+          const file = e.target.files[0];
+          const ext = file.name.split('.').pop()?.toLowerCase();
+
+          if (!["png", "jpg", "jpeg"].includes(ext || "")) {
+            toast.error("Only PNG and JPEG logos are allowed.");
+            return;
+          }
+
+          setUploadedLogo(file);
+          toast.success("Logo uploaded successfully!");
+        }
+      }}
+    />
+  </div>
+</div>
+
+
           </div>
 
           {/* Generate Script Button */}

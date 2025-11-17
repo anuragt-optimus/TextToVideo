@@ -88,7 +88,6 @@ const Avatar = () => {
                     onClick={() => {
                       setSelectedAvatar(avatar.id);
                       setUploadedImage(null);
-                      toast.success(`${avatar.name} selected`);
                     }}
                   >
                     {selectedAvatar === avatar.id && !uploadedImage && (

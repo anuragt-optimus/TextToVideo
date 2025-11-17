@@ -26,12 +26,25 @@ const Preview = () => {
   const navigate = useNavigate();
   const [captionsEnabled, setCaptionsEnabled] = useState(true);
   const [logoUploaded, setLogoUploaded] = useState(false);
+  const [backgroundUploaded, setBackgroundUploaded] = useState(false);
+  
 
   const handleLogoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files?.[0]) {
       setLogoUploaded(true);
     }
   };
+ const handleBackgroundUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  if (e.target.files?.[0]) {
+    setBackgroundUploaded(true);
+  }
+};
+
+const handleBrandingSubmit = () => {
+  // You can later send these files to backend or handle branding logic
+  console.log("Branding submitted!");
+  alert("Branding submitted successfully!");
+};
 
   return (
     <div className="min-h-screen bg-gradient-subtle">
@@ -63,25 +76,44 @@ const Preview = () => {
                   </div>
                 </div>
               </Card>
+              
+{/* Timeline */}
+<Card className="p-6">
+  <h3 className="font-semibold mb-4">Timeline</h3>
+  <div className="space-y-3">
+    {SCENES.map((scene) => {
+      let durationInSeconds: string | number = scene.duration;
 
-              {/* Timeline */}
-              <Card className="p-6">
-                <h3 className="font-semibold mb-4">Timeline</h3>
-                <div className="space-y-3">
-                  {SCENES.map((scene) => (
-                    <div
-                      key={scene.id}
-                      className="flex items-center justify-between p-3 bg-muted/50 rounded-lg hover:bg-muted transition-colors"
-                    >
-                      <div className="flex items-center gap-3">
-                        <FileText className="w-4 h-4 text-muted-foreground" />
-                        <span className="text-sm font-medium">{scene.title}</span>
-                      </div>
-                      <span className="text-xs text-muted-foreground">{scene.duration}</span>
-                    </div>
-                  ))}
-                </div>
-              </Card>
+      if (typeof scene.duration === "string" && scene.duration.includes("-")) {
+        const [start, end] = scene.duration.split("-");
+
+        // Helper to convert "0:15" → total seconds
+        const toSeconds = (time: string) => {
+          const [min, sec] = time.split(":").map(Number);
+          return min * 60 + sec;
+        };
+
+        const duration = toSeconds(end) - toSeconds(start);
+        durationInSeconds = `${duration} seconds`;
+      }
+
+      return (
+        <div
+          key={scene.id}
+          className="flex items-center justify-between p-3 bg-muted/50 rounded-lg hover:bg-muted transition-colors"
+        >
+          <div className="flex items-center gap-3">
+            <FileText className="w-4 h-4 text-muted-foreground" />
+            <span className="text-sm font-medium">{scene.title}</span>
+          </div>
+          <span className="text-xs text-muted-foreground">
+            {durationInSeconds}
+          </span>
+        </div>
+      );
+    })}
+  </div>
+</Card>
             </div>
 
             {/* Sidebar Controls */}
@@ -101,38 +133,61 @@ const Preview = () => {
                 </div>
               </Card>
 
-              <Card className="p-6">
-                <h3 className="font-semibold mb-4">Branding</h3>
-                
-                <div className="space-y-4">
-                  <div>
-                    <Label className="mb-2 block">Logo</Label>
-                    <Button
-                      variant="outline"
-                      className="w-full gap-2"
-                      onClick={() => document.getElementById('logo-upload')?.click()}
-                    >
-                      <Image className="w-4 h-4" />
-                      {logoUploaded ? 'Change Logo' : 'Upload Logo'}
-                    </Button>
-                    <input
-                      id="logo-upload"
-                      type="file"
-                      className="hidden"
-                      accept="image/*"
-                      onChange={handleLogoUpload}
-                    />
-                  </div>
+            <Card className="p-6">
+  <h3 className="font-semibold mb-4">Branding</h3>
 
-                  <div>
-                    <Label className="mb-2 block">Background</Label>
-                    <Button variant="outline" className="w-full gap-2">
-                      <Image className="w-4 h-4" />
-                      Change Background
-                    </Button>
-                  </div>
-                </div>
-              </Card>
+  <div className="space-y-4">
+    {/* Logo Upload */}
+    <div>
+      <Label className="mb-2 block">Logo</Label>
+      <Button
+        variant="outline"
+        className="w-full gap-2"
+        onClick={() => document.getElementById('logo-upload')?.click()}
+      >
+        <Image className="w-4 h-4" />
+        {logoUploaded ? 'Change Logo' : 'Upload Logo'}
+      </Button>
+      <input
+        id="logo-upload"
+        type="file"
+        className="hidden"
+        accept="image/*"
+        onChange={handleLogoUpload}
+      />
+    </div>
+
+    {/* Background Upload */}
+    <div>
+      <Label className="mb-2 block">Background</Label>
+      <Button
+        variant="outline"
+        className="w-full gap-2"
+        onClick={() => document.getElementById('background-upload')?.click()}
+      >
+        <Image className="w-4 h-4" />
+        {backgroundUploaded ? 'Change Background' : 'Upload Background'}
+      </Button>
+      <input
+        id="background-upload"
+        type="file"
+        className="hidden"
+        accept="image/*"
+        onChange={handleBackgroundUpload}
+      />
+    </div>
+
+    {/* Submit Button — only visible when at least one file is uploaded */}
+    {(logoUploaded || backgroundUploaded) && (
+      <div className="pt-2">
+        <Button className="w-full" onClick={handleBrandingSubmit}>
+          Submit Branding
+        </Button>
+      </div>
+    )}
+  </div>
+</Card>
+
 
               <Card className="p-6">
                 <h3 className="font-semibold mb-4">Quick Actions</h3>
