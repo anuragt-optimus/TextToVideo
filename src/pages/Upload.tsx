@@ -65,73 +65,78 @@ const Upload = () => {
     }
   };
 
-  const handleFile = (file: File) => {
-    const validTypes = ['.pdf', '.doc', '.docx', '.ppt', '.pptx', '.txt', '.md', '.jpg', '.jpeg', '.png', '.mp4', '.xlsx', '.csv'];
-    const fileExt = '.' + file.name.split('.').pop()?.toLowerCase();
-    
-    if (!validTypes.includes(fileExt)) {
-      toast.error("Invalid file type. Please upload a supported file (PDF, Word, PowerPoint, text, image, video, or spreadsheet).");
+  const handleFile = async (file: File) => {
+  const validTypes = ['.pdf', '.doc', '.docx', '.ppt', '.pptx', '.txt', '.md', '.jpg', '.jpeg', '.png', '.mp4', '.xlsx', '.csv'];
+  const fileExt = '.' + file.name.split('.').pop()?.toLowerCase();
+
+  if (!validTypes.includes(fileExt)) {
+    toast.error("Invalid file type. Please upload a supported file.");
+    return;
+  }
+
+  if (uploadedFiles.length >= 10) {
+    toast.error("Maximum 10 files allowed.");
+    return;
+  }
+
+  setIsUploading(true);
+  setUploadProgress(20);
+
+  const formData = new FormData();
+  formData.append("user_id", "3fa85f64-5717-4562-b3fc-2c963f66afa6");
+  formData.append("session_id", crypto.randomUUID());
+  formData.append("files", file);
+
+  try {
+    setUploadProgress(40);
+
+    const response = await fetch(
+      "https://ca-texttovideo-prod-use2-1.jollygrass-c5390b44.eastus2.azurecontainerapps.io/api/v1/content/extract",
+      {
+        method: "POST",
+        body: formData,
+      }
+    );
+
+    setUploadProgress(70);
+
+    const result = await response.json();
+
+    if (!response.ok) {
+      toast.error("Failed to extract content.");
+      setIsUploading(false);
+      setUploadProgress(0);
       return;
     }
 
-    if (uploadedFiles.length >= 10) {
-      toast.error("Maximum 10 files allowed.");
-      return;
-    }
-    
-    setIsUploading(true);
+    setUploadProgress(100);
+
+    const extracted = result?.data?.extracted_prompt_content || "";
+
+    // Append extracted text into textInput
+    setTextInput(prev => {
+      if (!prev) return extracted;
+      return prev + "\n\n--- Extracted from " + file.name + " ---\n" + extracted;
+    });
+
+    setUploadedFiles(prev => [
+      ...prev,
+      { id: `${Date.now()}`, name: file.name, type: 'text' }
+    ]);
+
+    toast.success(`Extracted content from "${file.name}"!`);
+
+  } catch (err) {
+    console.error(err);
+    toast.error("Error extracting file content");
+  }
+
+  setTimeout(() => {
+    setIsUploading(false);
     setUploadProgress(0);
-    
-    // Simulate upload progress
-    const progressInterval = setInterval(() => {
-      setUploadProgress((prev) => {
-        if (prev >= 90) {
-          clearInterval(progressInterval);
-          return prev;
-        }
-        return prev + 10;
-      });
-    }, 100);
-    
-    // Check if file is binary (image/video) or text-based
-    const binaryExtensions = ['.jpg', '.jpeg', '.png', '.mp4'];
-    const isBinaryFile = binaryExtensions.includes(fileExt);
-    const fileId = `${Date.now()}-${Math.random()}`;
-    
-    if (isBinaryFile) {
-      // For binary files (images/videos), don't try to read as text
-      clearInterval(progressInterval);
-      setUploadProgress(100);
-      
-      setTimeout(() => {
-        setUploadedFiles(prev => [...prev, { id: fileId, name: file.name, type: 'binary' }]);
-        setIsUploading(false);
-        setUploadProgress(0);
-        toast.success(`File "${file.name}" uploaded successfully!`);
-        setActiveTab("type");
-      }, 300);
-    } else {
-      // For text-based files, read the content
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        clearInterval(progressInterval);
-        setUploadProgress(100);
-        
-        setTimeout(() => {
-          const content = e.target?.result as string;
-          const currentText = textInput.trim();
-          const newText = currentText ? `${currentText}\n\n--- From ${file.name} ---\n${content}` : content;
-          setTextInput(newText || "File content extracted");
-          setUploadedFiles(prev => [...prev, { id: fileId, name: file.name, type: 'text' }]);
-          setIsUploading(false);
-          setUploadProgress(0);
-          toast.success(`File "${file.name}" uploaded successfully!`);
-          setActiveTab("type");
-        }, 300);
-      };
-      reader.readAsText(file);
-    }
-  };
+    setActiveTab("type");
+  }, 400);
+};
 
   const handleRemoveFile = (fileId: string) => {
     setUploadedFiles(prev => prev.filter(f => f.id !== fileId));
