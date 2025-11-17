@@ -9,10 +9,9 @@ import { toast } from "sonner";
 const STEPS = [
   { number: 1, label: "Upload" },
   { number: 2, label: "Script" },
-  { number: 3, label: "Voice" },
-  { number: 4, label: "Avatar" },
-  { number: 5, label: "Preview" },
-  { number: 6, label: "Export" },
+  { number: 3, label: "Avatar" },
+  { number: 4, label: "Preview" },
+  { number: 5, label: "Export" },
 ];
 
 const FORMATS = [
@@ -51,7 +50,7 @@ const Export = () => {
   return (
     <div className="min-h-screen bg-gradient-subtle">
       <div className="max-w-7xl mx-auto px-6 py-8">
-        <ProgressSteps currentStep={6} steps={STEPS} />
+        <ProgressSteps currentStep={5} steps={STEPS} />
 
         <div className="max-w-5xl mx-auto mt-12">
           <h1 className="text-4xl font-bold mb-3">Export and Share</h1>

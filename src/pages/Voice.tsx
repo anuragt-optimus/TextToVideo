@@ -10,10 +10,9 @@ import VoiceWaveform from "@/components/VoiceWaveform";
 const STEPS = [
   { number: 1, label: "Upload" },
   { number: 2, label: "Script" },
-  { number: 3, label: "Voice" },
-  { number: 4, label: "Avatar" },
-  { number: 5, label: "Preview" },
-  { number: 6, label: "Export" },
+  { number: 3, label: "Avatar" },
+  { number: 4, label: "Preview" },
+  { number: 5, label: "Export" },
 ];
 
 const VOICE_CONFIG: Record<string, { preferredNames: string[], pitch: number, rate: number, gender: string }> = {
