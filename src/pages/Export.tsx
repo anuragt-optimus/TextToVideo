@@ -91,36 +91,12 @@ useEffect(() => {
 
           {/* Download Options */}
           <div className="mb-12">
-            <h2 className="text-xl font-semibold mb-6">Download Options</h2>
-            <Card className="p-6">
-              <div className="space-y-4">
-                <div className="flex items-center gap-3">
-                  <Checkbox 
-                    id="subtitles" 
-                    checked={includeSubtitles}
-                    onCheckedChange={(checked) => setIncludeSubtitles(checked as boolean)}
-                  />
-                  <label htmlFor="subtitles" className="text-sm font-medium cursor-pointer">
-                    Include .srt subtitle file
-                  </label>
-                </div>
-                
-                <div className="flex items-center gap-3">
-                  <Checkbox 
-                    id="thumbnail" 
-                    checked={includeThumbnail}
-                    onCheckedChange={(checked) => setIncludeThumbnail(checked as boolean)}
-                  />
-                  <label htmlFor="thumbnail" className="text-sm font-medium cursor-pointer">
-                    Include thumbnail image
-                  </label>
-                </div>
-              </div>
-
+            <h2 className="text-xl font-semibold mb-6">Download Option</h2>
+            <Card className="p-6">              
               <div className="mt-6 pt-6 border-t">
                 <Button size="lg" className="w-full gap-2" onClick={handleDownload}>
                   <Download className="w-5 h-5" />
-                  Download All
+                  Download
                 </Button>
               </div>
             </Card>
