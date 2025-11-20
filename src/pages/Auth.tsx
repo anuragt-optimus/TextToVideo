@@ -6,7 +6,6 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/com
 import { useToast } from "@/hooks/use-toast";
 import { msalConfig, loginRequest } from "@/config/authConfig";
 
-// Single MSAL instance
 const msalInstance = new PublicClientApplication(msalConfig);
 
 export const Auth = () => {
@@ -17,17 +16,14 @@ export const Auth = () => {
   useEffect(() => {
     const handleAuthRedirect = async () => {
       try {
-        // 1. Initialize MSAL if method exists
         if (typeof (msalInstance as any).initialize === "function") {
           await (msalInstance as any).initialize();
         }
 
-        // 2. Handle the redirect response FIRST (processes code from auth server)
         console.log("--------Auth - Handling redirect promise...");
         const response = await msalInstance.handleRedirectPromise();
         console.log("--------Auth - Redirect response:", response);
 
-        // 3. Get account from response or from stored accounts
         let account = response?.account;
         if (!account) {
           const accounts = msalInstance.getAllAccounts();

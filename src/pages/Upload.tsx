@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Paperclip, FileText, Upload as UploadIcon, Sparkles, Mic, Clock, HelpCircle, Image as ImageIcon, Video, X } from "lucide-react";
+import { Eye } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -17,9 +18,12 @@ import {
 
 const TONE_OPTIONS = [
   { id: "professional", label: "Professional" },
-  { id: "friendly", label: "Friendly" },
-  { id: "narrative", label: "Narrative" },
-  { id: "promotional", label: "Promotional" },
+  { id: "casual", label: "Casual" },
+  { id: "energetic", label: "Energetic" },
+  { id: "calm", label: "Calm" },
+  { id: "humorous", label: "Humorous" },
+  { id: "inspirational", label: "Inspirational" },
+
 ];
 
 const Upload = () => {
@@ -34,6 +38,8 @@ const Upload = () => {
   const [activeTab, setActiveTab] = useState("type");
   const [selectedFormat, setSelectedFormat] = useState("horizontal");
   const [uploadedLogo, setUploadedLogo] = useState<File | null>(null);
+  const [selectedVoice, setSelectedVoice] = useState("male");
+
 
 
 
@@ -163,9 +169,12 @@ const Upload = () => {
     return;
   }
 console.log("passed from here")
+const account = JSON.parse(localStorage.getItem("authUser") || "{}");
+const userId = account?.homeAccountId || "Not Found";
+console.log("User ID:", userId);
   try {
     const payload = {
-      user_id: "string",
+      user_id: userId,
       session_id: crypto.randomUUID(),
       extracted_prompt_content: textInput,
       video_duration: selectedDuration,
@@ -211,7 +220,7 @@ console.log("passed from here")
         files: uploadedFiles,
         duration: selectedDuration,
         format: selectedFormat,
-        logo: uploadedLogo || null,
+        voice: selectedVoice,
       },
     });
   } catch (err) {
@@ -508,81 +517,45 @@ console.log("passed from here")
   </div>
 </div>
 
-{/* Logo Upload */}
-<div className="mt-8">
-  <div className="flex items-center gap-2 mb-4">
-    <ImageIcon className="w-4 h-4" />
-    <label className="text-sm font-medium">Upload Your Logo (Optional)</label>
+{/* Voice Selector */}
+<div>
+  <div className="flex items-center gap-2 mb-4 mt-6">
+    <Mic className="w-4 h-4" />
+    <label className="text-sm font-medium">Voice Type</label>
     <Tooltip>
       <TooltipTrigger asChild>
         <HelpCircle className="w-4 h-4 text-muted-foreground cursor-help" />
       </TooltipTrigger>
       <TooltipContent>
-        <p>Your logo will be added to the final video.</p>
+        <p>Select the narration voice for your video</p>
       </TooltipContent>
     </Tooltip>
   </div>
 
-  <div
-    className="
-      relative bg-card rounded-xl border border-border p-6
-      flex flex-col items-center justify-center text-center
-    "
-  >
-    {!uploadedLogo ? (
-      <>
-        <ImageIcon className="w-8 h-8 text-muted-foreground mb-3" />
-        <p className="text-sm text-muted-foreground mb-4">
-          Upload a PNG or JPEG logo
-        </p>
-        <Button
-          variant="outline"
-          onClick={() => document.getElementById('logo-input')?.click()}
-        >
-          Upload Logo
-        </Button>
-      </>
-    ) : (
-      <div className="flex flex-col items-center">
-        <img
-          src={URL.createObjectURL(uploadedLogo)}
-          alt="Logo Preview"
-          className="h-20 object-contain mb-3"
-        />
-        <p className="text-sm font-medium">{uploadedLogo.name}</p>
-
-        <Button
-          variant="ghost"
-          className="mt-3 text-destructive"
-          onClick={() => setUploadedLogo(null)}
-        >
-          Remove Logo
-        </Button>
-      </div>
-    )}
-
-    <input
-      id="logo-input"
-      type="file"
-      accept=".png,.jpg,.jpeg"
-      className="hidden"
-      onChange={(e) => {
-        if (e.target.files && e.target.files[0]) {
-          const file = e.target.files[0];
-          const ext = file.name.split('.').pop()?.toLowerCase();
-
-          if (!["png", "jpg", "jpeg"].includes(ext || "")) {
-            toast.error("Only PNG and JPEG logos are allowed.");
-            return;
+  <div className="flex flex-wrap gap-2">
+    {[
+      { id: "male", label: "Male Voice" },
+      { id: "female", label: "Female Voice" }
+    ].map((voice) => (
+      <button
+        key={voice.id}
+        onClick={() => setSelectedVoice(voice.id)}
+        className={`
+          px-5 py-2 rounded-full text-sm font-medium transition-all
+          ${selectedVoice === voice.id
+            ? 'bg-primary text-primary-foreground'
+            : 'bg-muted text-muted-foreground hover:bg-muted/80'
           }
-
-          setUploadedLogo(file);
-          toast.success("Logo uploaded successfully!");
-        }
-      }}
-    />
+        `}
+      >
+        {voice.label}
+      </button>
+    ))}
   </div>
 </div>
+
+
+
 
 
           </div>
@@ -619,10 +592,10 @@ console.log("passed from here")
               </div>
               <div className="text-center">
                 <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-3">
-                  <Mic className="w-6 h-6 text-primary" />
+                  <Eye  className="w-6 h-6 text-primary" />
                 </div>
-                <h4 className="font-medium mb-1 text-sm">3. Voice & Avatar</h4>
-                <p className="text-xs text-muted-foreground">Choose your presenter style</p>
+                <h4 className="font-medium mb-1 text-sm">3. Preview</h4>
+                <p className="text-xs text-muted-foreground">Preview your video before exporting</p>
               </div>
               <div className="text-center">
                 <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-3">

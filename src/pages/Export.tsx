@@ -5,13 +5,15 @@ import { Card } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import { ProgressSteps } from "@/components/ProgressSteps";
 import { toast } from "sonner";
+import { useLocation } from "react-router-dom";
+import { useEffect } from "react";
+
 
 const STEPS = [
   { number: 1, label: "Upload" },
   { number: 2, label: "Script" },
-  { number: 3, label: "Avatar" },
-  { number: 4, label: "Preview" },
-  { number: 5, label: "Export" },
+  { number: 3, label: "Preview" },
+  { number: 4, label: "Export" },
 ];
 
 const FORMATS = [
@@ -27,6 +29,28 @@ const PLATFORMS = [
 ];
 
 const Export = () => {
+  const location = useLocation();
+const videoId = location.state?.videoId;
+
+const [videoBlobUrl, setVideoBlobUrl] = useState<string | null>(null);
+
+useEffect(() => {
+  const fetchVideo = async () => {
+    if (!videoId) return;
+
+    const response = await fetch(
+      `https://ca-texttovideo-prod-use2-1.jollygrass-c5390b44.eastus2.azurecontainerapps.io/api/v1/video/download/${videoId}`,
+      { method: "GET", headers: { accept: "application/json" } }
+    );
+
+    const blob = await response.blob();
+    const url = URL.createObjectURL(blob);
+    setVideoBlobUrl(url);
+  };
+
+  fetchVideo();
+}, [videoId]);
+
   const [selectedFormats, setSelectedFormats] = useState<string[]>(["horizontal"]);
   const [includeSubtitles, setIncludeSubtitles] = useState(true);
   const [includeThumbnail, setIncludeThumbnail] = useState(true);
@@ -40,17 +64,24 @@ const Export = () => {
   };
 
   const handleDownload = () => {
-    toast.success("Your video is being prepared for download!");
-  };
+  if (!videoBlobUrl) {
+    toast.error("Video is still generating. Please wait.");
+    return;
+  }
 
-  const handlePublish = (platform: string) => {
-    toast.success(`Publishing to ${platform}...`);
-  };
+  const link = document.createElement("a");
+  link.href = videoBlobUrl;
+  link.download = "generated-video.mp4";
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  toast.success("Download started!");
+};
 
   return (
     <div className="min-h-screen bg-gradient-subtle">
       <div className="max-w-7xl mx-auto px-6 py-8">
-        <ProgressSteps currentStep={5} steps={STEPS} />
+        <ProgressSteps currentStep={4} steps={STEPS} />
 
         <div className="max-w-5xl mx-auto mt-12">
           <h1 className="text-4xl font-bold mb-3">Export and Share</h1>
