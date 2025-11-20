@@ -118,6 +118,7 @@ const Preview = () => {
                           files,
                           duration,
                           format,
+                          voice: location.state?.voice
                         },
                       })
                     }
@@ -141,6 +142,7 @@ const Preview = () => {
                           files,
                           duration,
                           format,
+                          voice: location.state?.voice
                         },
                       })}>
               Back

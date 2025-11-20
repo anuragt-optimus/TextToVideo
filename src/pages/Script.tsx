@@ -69,8 +69,8 @@ const [scenes, setScenes] = useState<Scene[]>(() => {
 const uploadedContent = location.state?.content || location.state?.uploadedContent || "";
 const uploadedTone = location.state?.tone || "Professional";
 const uploadedFiles = location.state?.files || [];
-const uploadedFormat = location.state?.format || "16:9";
-const uploadedDuration = location.state?.duration || 0;
+const uploadedFormat = location.state?.format || "720×1280";
+const uploadedDuration = location.state?.duration || 4;
 
 
 
@@ -95,8 +95,10 @@ const uploadedDuration = location.state?.duration || 0;
         scene_content: s.text,
       })),
       duration: location.state?.duration,
-      aspect_ratio: "16:9",
+      aspect_ratio: location.state?.format,
+      gender: location.state?.voice
     };
+    console.log("------Video Generation Payload:", payload);
 
     const response = await fetch(
       "https://ca-texttovideo-prod-use2-1.jollygrass-c5390b44.eastus2.azurecontainerapps.io/api/v1/video/generate",
@@ -133,6 +135,7 @@ const uploadedDuration = location.state?.duration || 0;
     files: uploadedFiles,
     duration: location.state?.duration,
     format: uploadedFormat,
+    voice: location.state?.voice
   },
 });
 

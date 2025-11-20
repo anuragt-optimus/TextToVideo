@@ -34,11 +34,11 @@ const Upload = () => {
   const [uploadedFiles, setUploadedFiles] = useState<Array<{id: string, name: string, type: 'text' | 'binary'}>>([]);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [isUploading, setIsUploading] = useState(false);
-  const [selectedDuration, setSelectedDuration] = useState(4);
+  const [selectedDuration, setSelectedDuration] = useState(12);
   const [activeTab, setActiveTab] = useState("type");
-  const [selectedFormat, setSelectedFormat] = useState("720×1280");
+  const [selectedFormat, setSelectedFormat] = useState("horizontal");
   const [uploadedLogo, setUploadedLogo] = useState<File | null>(null);
-  const [selectedVoice, setSelectedVoice] = useState("male");
+  const [selectedVoice, setSelectedVoice] = useState("Male");
 
 
 
@@ -219,7 +219,11 @@ console.log("User ID:", userId);
         tone: selectedTone,
         files: uploadedFiles,
         duration: selectedDuration,
-        format: selectedFormat,
+        format:  selectedFormat === "horizontal"
+          ? "16:9"
+          : selectedFormat === "square"
+          ? "1:1"
+          : "9:16",
         voice: selectedVoice,
       },
     });
@@ -495,8 +499,8 @@ console.log("User ID:", userId);
   </div>
   <div className="flex flex-wrap gap-2">
     {[
-      { id: "720×1280", label: "Portrait (720×1280)" },
-      { id: "1280×720", label: "Landscape (1280×720)" } 
+      { id: "horizontal", label: "Horizontal (16:9)" },
+      { id: "vertical", label: "Vertical (9:16)" }
     ].map((format) => (
       <button
         key={format.id}
@@ -532,8 +536,8 @@ console.log("User ID:", userId);
 
   <div className="flex flex-wrap gap-2">
     {[
-      { id: "male", label: "Male Voice" },
-      { id: "female", label: "Female Voice" }
+      { id: "Male", label: "Male Voice" },
+      { id: "Female", label: "Female Voice" }
     ].map((voice) => (
       <button
         key={voice.id}
