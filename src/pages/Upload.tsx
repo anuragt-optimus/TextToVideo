@@ -34,9 +34,9 @@ const Upload = () => {
   const [uploadedFiles, setUploadedFiles] = useState<Array<{id: string, name: string, type: 'text' | 'binary'}>>([]);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [isUploading, setIsUploading] = useState(false);
-  const [selectedDuration, setSelectedDuration] = useState(60);
+  const [selectedDuration, setSelectedDuration] = useState(4);
   const [activeTab, setActiveTab] = useState("type");
-  const [selectedFormat, setSelectedFormat] = useState("horizontal");
+  const [selectedFormat, setSelectedFormat] = useState("720×1280");
   const [uploadedLogo, setUploadedLogo] = useState<File | null>(null);
   const [selectedVoice, setSelectedVoice] = useState("male");
 
@@ -261,7 +261,7 @@ console.log("User ID:", userId);
               >
                 <div className="flex items-start gap-4 p-6">
                   <Textarea
-                    placeholder="Example: Create a 1-minute video introducing my AI-powered scheduling assistant that helps teams save 10 hours per week..."
+                    placeholder="Example: Create a video introducing my AI-powered scheduling assistant that helps teams save 10 hours per week..."
                     value={textInput}
                     onChange={(e) => setTextInput(e.target.value)}
                     className="flex-1 min-h-[180px] border-0 focus-visible:ring-0 focus-visible:ring-offset-0 resize-none text-base"
@@ -495,10 +495,8 @@ console.log("User ID:", userId);
   </div>
   <div className="flex flex-wrap gap-2">
     {[
-      { id: "horizontal", label: "Horizontal (16:9)" },
-      { id: "square", label: "Square (1:1)" },
-      { id: "vertical", label: "Vertical (9:16)" },
-      
+      { id: "720×1280", label: "Portrait (720×1280)" },
+      { id: "1280×720", label: "Landscape (1280×720)" } 
     ].map((format) => (
       <button
         key={format.id}
