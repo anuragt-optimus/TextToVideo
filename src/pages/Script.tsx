@@ -5,7 +5,6 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Card } from "@/components/ui/card";
 import { ProgressSteps } from "@/components/ProgressSteps";
-// import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import {
   Dialog,
@@ -15,7 +14,6 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
   Select,
@@ -28,9 +26,8 @@ import {
 const STEPS = [
   { number: 1, label: "Upload" },
   { number: 2, label: "Script" },
-  { number: 3, label: "Avatar" },
-  { number: 4, label: "Preview" },
-  { number: 5, label: "Export" },
+  { number: 3, label: "Preview" },
+  { number: 4, label: "Export" },
 ];
 
 interface Scene {
@@ -41,23 +38,42 @@ interface Scene {
 
 const Script = () => {
   const navigate = useNavigate();
+  
+  
   const location = useLocation();
   const { toast } = useToast();
   const [isGenerating, setIsGenerating] = useState(false);
-  const apiScenes = location.state?.apiResponse?.data?.scenes || [];
 
-const [scenes, setScenes] = useState<Scene[]>(
-  apiScenes.length > 0
-    ? apiScenes.map((s: any) => ({
-        id: String(s.scene_number),
-        text: s.scene_content,
-        duration: Math.ceil((s.scene_content.split(" ").length || 0) * 0.4), // approx 0.4 sec/word
-      }))
-    : []
-);
+  const restoredScenes = location.state?.scenes || null;
 
-  const uploadedContent = location.state?.content || "";
-  const uploadedTone = location.state?.tone || "Professional";
+const apiScenes = location.state?.apiResponse?.data?.scenes || [];
+
+const [scenes, setScenes] = useState<Scene[]>(() => {
+  // If editing from preview → restore previous scenes
+  if (restoredScenes) return restoredScenes;
+
+  // Else load newly generated API scenes
+  if (apiScenes.length > 0) {
+    return apiScenes.map((s: any) => ({
+      id: String(s.scene_number),
+      text: s.scene_content,
+      duration: Math.ceil((s.scene_content.split(" ").length || 0) * 0.4),
+    }));
+  }
+
+  return [];
+});
+
+
+
+const uploadedContent = location.state?.content || location.state?.uploadedContent || "";
+const uploadedTone = location.state?.tone || "Professional";
+const uploadedFiles = location.state?.files || [];
+const uploadedFormat = location.state?.format || "16:9";
+const uploadedDuration = location.state?.duration || 0;
+
+
+
 
   const totalDuration = scenes.reduce((sum, scene) => sum + scene.duration, 0);
   const totalWords = scenes.reduce((sum, scene) => sum + scene.text.split(' ').length, 0);
@@ -67,15 +83,82 @@ const [scenes, setScenes] = useState<Scene[]>(
       scene.id === id ? { ...scene, text, duration: Math.ceil(text.split(' ').length * 0.4) } : scene
     ));
   };
+  const handleNextPreview = async () => {
+  setIsGenerating(true);
+
+  try {
+    const payload = {
+      user_id: "string",
+      session_id: crypto.randomUUID(),
+      scenes: scenes.map((s, index) => ({
+        scene_number: index + 1,
+        scene_content: s.text,
+      })),
+      duration: location.state?.duration,
+      aspect_ratio: "16:9",
+    };
+
+    const response = await fetch(
+      "https://ca-texttovideo-prod-use2-1.jollygrass-c5390b44.eastus2.azurecontainerapps.io/api/v1/video/generate",
+      {
+        method: "POST",
+        headers: {
+          accept: "application/json",
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(payload),
+      }
+    );
+
+    const result = await response.json();
+
+    if (!response.ok) {
+      toast({
+        title: "Video generation failed",
+        description: "Please try again.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const videoUrl = result?.data?.video_file?.url;
+    const videoId = videoUrl?.split("/").pop();
+
+    navigate("/preview", {
+  state: {
+    videoId,
+    scenes,
+    content: uploadedContent,
+    tone: uploadedTone,
+    files: uploadedFiles,
+    duration: location.state?.duration,
+    format: uploadedFormat,
+  },
+});
+
+  } catch (error) {
+    console.error(error);
+    toast({
+      title: "Error",
+      description: "Something went wrong while generating video.",
+      variant: "destructive",
+    });
+  } finally {
+    setIsGenerating(false);
+  }
+};
+
+
 
   const addScene = () => {
-    const newScene: Scene = {
-      id: String(scenes.length + 1),
-      text: "",
-      duration: 0,
-    };
-    setScenes([...scenes, newScene]);
+  const newScene: Scene = {
+    id: crypto.randomUUID(),
+    text: "",
+    duration: 0,
   };
+  setScenes([...scenes, newScene]);
+};
+
 
   const deleteScene = (id: string) => {
     if (scenes.length > 1) {
@@ -206,7 +289,7 @@ const [scenes, setScenes] = useState<Scene[]>(
                         {index + 1}
                       </span>
                       <span className="text-sm text-muted-foreground">
-                        Scene {index + 1} • ~{scene.duration}s
+                        Scene {index + 1}
                       </span>
                     </div>
                     <div className="flex gap-2">
@@ -252,15 +335,16 @@ const [scenes, setScenes] = useState<Scene[]>(
                               <Label htmlFor="tone">Tone</Label>
                               <Select value={selectedToneOverride} onValueChange={setSelectedToneOverride}>
                                 <SelectTrigger id="tone">
-                                  <SelectValue placeholder={`Use uploaded tone (${uploadedTone})`} />
+                                  <SelectValue placeholder={uploadedTone} />
                                 </SelectTrigger>
                                 <SelectContent>
-                                  <SelectItem value="default">Use uploaded tone ({uploadedTone})</SelectItem>
+                                  <SelectItem value={uploadedTone}>Use uploaded tone ({uploadedTone})</SelectItem>
                                   <SelectItem value="professional">Professional</SelectItem>
                                   <SelectItem value="casual">Casual</SelectItem>
-                                  <SelectItem value="friendly">Friendly</SelectItem>
-                                  <SelectItem value="enthusiastic">Enthusiastic</SelectItem>
-                                  <SelectItem value="narrative">Narrative</SelectItem>
+                                  <SelectItem value="energetic">Energetic</SelectItem>
+                                  <SelectItem value="calm">Calm</SelectItem>
+                                  <SelectItem value="humorous">Humorous</SelectItem>
+                                  <SelectItem value="inspirational">Inspirational</SelectItem>
                                 </SelectContent>
                               </Select>
                             </div>
@@ -272,9 +356,9 @@ const [scenes, setScenes] = useState<Scene[]>(
                                   <SelectValue />
                                 </SelectTrigger>
                                 <SelectContent>
-                                  <SelectItem value="short">Short (~10s)</SelectItem>
-                                  <SelectItem value="medium">Medium (~15s)</SelectItem>
-                                  <SelectItem value="long">Long (~20s)</SelectItem>
+                                  <SelectItem value="short">Short (~4s)</SelectItem>
+                                  <SelectItem value="medium">Medium (~8s)</SelectItem>
+                                  <SelectItem value="long">Long (~12s)</SelectItem>
                                 </SelectContent>
                               </Select>
                             </div>
@@ -358,8 +442,8 @@ const [scenes, setScenes] = useState<Scene[]>(
                     <div className="text-2xl font-bold">{totalWords}</div>
                   </div>
                   <div>
-                    <div className="text-sm text-muted-foreground mb-1">Estimated Length</div>
-                    <div className="text-2xl font-bold">{totalDuration}s</div>
+                    <div className="text-sm text-muted-foreground mb-1">Length</div>
+                    <div className="text-2xl font-bold">{location.state?.duration}s</div>
                   </div>
                   <div>
                     <div className="text-sm text-muted-foreground mb-1">Scenes</div>
@@ -369,15 +453,46 @@ const [scenes, setScenes] = useState<Scene[]>(
               </Card>
             </div>
           </div>
-
           {/* Action Buttons */}
           <div className="mt-12 flex justify-between">
             <Button variant="outline" onClick={() => navigate("/upload")}>
               Back
             </Button>
-            <Button size="lg" onClick={() => navigate("/avatar")} className="px-8">
-              Next: Choose Avatar
-            </Button>
+            <Button 
+  size="lg" 
+  onClick={handleNextPreview} 
+  className="px-8"
+  disabled={isGenerating}
+>
+  {isGenerating ? (
+    <div className="flex items-center gap-2">
+      <svg
+        className="animate-spin h-5 w-5"
+        viewBox="0 0 24 24"
+      >
+        <circle
+          className="opacity-25"
+          cx="12"
+          cy="12"
+          r="10"
+          stroke="currentColor"
+          strokeWidth="4"
+        ></circle>
+        <path
+          className="opacity-75"
+          fill="currentColor"
+          d="M4 12a8 8 0 018-8v4l3-3-3-3v4a8 8 0 100 16v-4l-3 3 3 3v-4a8 8 0 01-8-8z"
+        ></path>
+      </svg>
+      Generating Video...
+    </div>
+  ) : (
+    "Next: Preview Video"
+  )}
+</Button>
+
+
+
           </div>
         </div>
       </div>

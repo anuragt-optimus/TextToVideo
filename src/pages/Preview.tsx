@@ -6,19 +6,15 @@ import { Card } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { ProgressSteps } from "@/components/ProgressSteps";
+import { useEffect } from "react";
+import { useLocation } from "react-router-dom";
+
 
 const STEPS = [
   { number: 1, label: "Upload" },
   { number: 2, label: "Script" },
-  { number: 3, label: "Avatar" },
-  { number: 4, label: "Preview" },
-  { number: 5, label: "Export" },
-];
-
-const SCENES = [
-  { id: "1", title: "Scene 1", duration: "0:00-0:15" },
-  { id: "2", title: "Scene 2", duration: "0:15-0:33" },
-  { id: "3", title: "Scene 3", duration: "0:33-0:49" },
+  { number: 3, label: "Preview" },
+  { number: 4, label: "Export" },
 ];
 
 const Preview = () => {
@@ -26,29 +22,60 @@ const Preview = () => {
   const [captionsEnabled, setCaptionsEnabled] = useState(true);
   const [logoUploaded, setLogoUploaded] = useState(false);
   const [backgroundUploaded, setBackgroundUploaded] = useState(false);
-  
+  const location = useLocation();
+  const videoId = location.state?.videoId;
+  const scenes = location.state?.scenes || [];
+  const content = location.state?.content || "";
+  const tone = location.state?.tone || "Professional";
+  const files = location.state?.files || [];
+  const duration = location.state?.duration || 0;
+  const format = location.state?.format || "16:9";
+
+  const [videoUrl, setVideoUrl] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchVideo = async () => {
+      if (!videoId) return;
+
+      const response = await fetch(
+        `https://ca-texttovideo-prod-use2-1.jollygrass-c5390b44.eastus2.azurecontainerapps.io/api/v1/video/download/${videoId}`,
+        { method: "GET", headers: { accept: "application/json" } }
+      );
+
+      // The API sends a binary video file → convert to blob
+      const blob = await response.blob();
+      const url = URL.createObjectURL(blob);
+      setVideoUrl(url);
+    };
+
+    fetchVideo();
+  }, [videoId]);
+
+
+
+
 
   const handleLogoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files?.[0]) {
       setLogoUploaded(true);
     }
   };
- const handleBackgroundUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-  if (e.target.files?.[0]) {
-    setBackgroundUploaded(true);
-  }
-};
+  const handleBackgroundUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files?.[0]) {
+      setBackgroundUploaded(true);
+    }
+  };
 
-const handleBrandingSubmit = () => {
-  // You can later send these files to backend or handle branding logic
-  console.log("Branding submitted!");
-  alert("Branding submitted successfully!");
-};
+  const handleBrandingSubmit = () => {
+    // You can later send these files to backend or handle branding logic
+    console.log("Branding submitted!");
+    alert("Branding submitted successfully!");
+  };
 
   return (
     <div className="min-h-screen bg-gradient-subtle">
       <div className="max-w-7xl mx-auto px-6 py-8">
-        <ProgressSteps currentStep={4} steps={STEPS} />
+        <ProgressSteps currentStep={3} steps={STEPS} />
 
         <div className="max-w-6xl mx-auto mt-12">
           <h1 className="text-4xl font-bold mb-3">Video Preview & Edit</h1>
@@ -60,150 +87,45 @@ const handleBrandingSubmit = () => {
             {/* Main Video Preview */}
             <div className="lg:col-span-2">
               <Card className="overflow-hidden mb-6">
-                <div className="aspect-video bg-muted flex items-center justify-center relative">
-                  <Play className="w-20 h-20 text-muted-foreground opacity-50" />
-                  <div className="absolute bottom-4 left-4 right-4">
-                    <div className="bg-background/90 backdrop-blur-sm rounded-lg p-3">
-                      <div className="h-1.5 bg-muted rounded-full mb-2">
-                        <div className="h-full bg-primary rounded-full w-1/3" />
-                      </div>
-                      <div className="flex items-center justify-between text-xs">
-                        <span>0:16</span>
-                        <span>0:49</span>
-                      </div>
-                    </div>
-                  </div>
+                <div className="aspect-video bg-black flex items-center justify-center relative">
+                  {videoUrl ? (
+                    <video src={videoUrl} controls className="w-full h-full" />
+                  ) : (
+                    <div className="text-muted-foreground">Loading video...</div>
+                  )}
                 </div>
               </Card>
-              
-{/* Timeline */}
-<Card className="p-6">
-  <h3 className="font-semibold mb-4">Timeline</h3>
-  <div className="space-y-3">
-    {SCENES.map((scene) => {
-      let durationInSeconds: string | number = scene.duration;
 
-      if (typeof scene.duration === "string" && scene.duration.includes("-")) {
-        const [start, end] = scene.duration.split("-");
-
-        // Helper to convert "0:15" → total seconds
-        const toSeconds = (time: string) => {
-          const [min, sec] = time.split(":").map(Number);
-          return min * 60 + sec;
-        };
-
-        const duration = toSeconds(end) - toSeconds(start);
-        durationInSeconds = `${duration} seconds`;
-      }
-
-      return (
-        <div
-          key={scene.id}
-          className="flex items-center justify-between p-3 bg-muted/50 rounded-lg hover:bg-muted transition-colors"
-        >
-          <div className="flex items-center gap-3">
-            <FileText className="w-4 h-4 text-muted-foreground" />
-            <span className="text-sm font-medium">{scene.title}</span>
-          </div>
-          <span className="text-xs text-muted-foreground">
-            {durationInSeconds}
-          </span>
-        </div>
-      );
-    })}
-  </div>
-</Card>
             </div>
 
             {/* Sidebar Controls */}
             <div className="space-y-6">
-              <Card className="p-6">
-                <h3 className="font-semibold mb-4">Options</h3>
-                
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <Label htmlFor="captions">Show Captions</Label>
-                    <Switch
-                      id="captions"
-                      checked={captionsEnabled}
-                      onCheckedChange={setCaptionsEnabled}
-                    />
-                  </div>
-                </div>
-              </Card>
-
-            <Card className="p-6">
-  <h3 className="font-semibold mb-4">Branding</h3>
-
-  <div className="space-y-4">
-    {/* Logo Upload */}
-    <div>
-      <Label className="mb-2 block">Logo</Label>
-      <Button
-        variant="outline"
-        className="w-full gap-2"
-        onClick={() => document.getElementById('logo-upload')?.click()}
-      >
-        <Image className="w-4 h-4" />
-        {logoUploaded ? 'Change Logo' : 'Upload Logo'}
-      </Button>
-      <input
-        id="logo-upload"
-        type="file"
-        className="hidden"
-        accept="image/*"
-        onChange={handleLogoUpload}
-      />
-    </div>
-
-    {/* Background Upload */}
-    <div>
-      <Label className="mb-2 block">Background</Label>
-      <Button
-        variant="outline"
-        className="w-full gap-2"
-        onClick={() => document.getElementById('background-upload')?.click()}
-      >
-        <Image className="w-4 h-4" />
-        {backgroundUploaded ? 'Change Background' : 'Upload Background'}
-      </Button>
-      <input
-        id="background-upload"
-        type="file"
-        className="hidden"
-        accept="image/*"
-        onChange={handleBackgroundUpload}
-      />
-    </div>
-
-    {/* Submit Button — only visible when at least one file is uploaded */}
-    {(logoUploaded || backgroundUploaded) && (
-      <div className="pt-2">
-        <Button className="w-full" onClick={handleBrandingSubmit}>
-          Submit Branding
-        </Button>
-      </div>
-    )}
-  </div>
-</Card>
-
 
               <Card className="p-6">
                 <h3 className="font-semibold mb-4">Quick Actions</h3>
-                
+
                 <div className="space-y-3">
-                  <Button variant="outline" className="w-full gap-2">
-                    <RefreshCw className="w-4 h-4" />
-                    Regenerate Audio
-                  </Button>
-                  
-                  <Button 
-                    variant="outline" 
-                    className="w-full"
-                    onClick={() => navigate("/script")}
+
+
+                  <Button
+                    variant="outline"
+                    onClick={() =>
+                      navigate("/script", {
+                        state: {
+                          scenes,
+                          content,
+                          tone,
+                          files,
+                          duration,
+                          format,
+                        },
+                      })
+                    }
                   >
                     Edit Script
                   </Button>
+
+
                 </div>
               </Card>
             </div>
@@ -211,12 +133,30 @@ const handleBrandingSubmit = () => {
 
           {/* Action Buttons */}
           <div className="mt-12 flex justify-between">
-            <Button variant="outline" onClick={() => navigate("/avatar")}>
+            <Button variant="outline" onClick={() => navigate("/script", {
+                        state: {
+                          scenes,
+                          content,
+                          tone,
+                          files,
+                          duration,
+                          format,
+                        },
+                      })}>
               Back
             </Button>
-            <Button size="lg" onClick={() => navigate("/export")} className="px-8">
-              Confirm and Export
-            </Button>
+            <Button
+  size="lg"
+  onClick={() =>
+    navigate("/export", {
+      state: { videoId },
+    })
+  }
+  className="px-8"
+>
+  Confirm and Export
+</Button>
+
           </div>
         </div>
       </div>
