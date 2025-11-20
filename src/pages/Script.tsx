@@ -76,7 +76,20 @@ const uploadedDuration = location.state?.duration || 4;
 
 
   const totalDuration = scenes.reduce((sum, scene) => sum + scene.duration, 0);
-  const totalWords = scenes.reduce((sum, scene) => sum + scene.text.split(' ').length, 0);
+
+  const countWords = (text: string) => {
+  return text
+    .trim()
+    .split(/\s+/)
+    .filter(Boolean)
+    .length;
+};
+
+const totalWords = scenes.reduce(
+  (sum, scene) => sum + countWords(scene.text),
+  0
+);
+
 
   const updateScene = (id: string, text: string) => {
     setScenes(scenes.map(scene => 
