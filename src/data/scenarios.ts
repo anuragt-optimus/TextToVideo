@@ -57,7 +57,8 @@ export const SCENARIOS: Scenario[] = [
 ];
 
 export const DURATION_OPTIONS = [
-  { value: 4, label: "4 seconds", words: "~20 words" },
+  { value: 12, label: "12 seconds", words: "~60 words" },
   { value: 8, label: "8 seconds", words: "~40 words" },
-  { value: 12, label: "12 seconds", words: "~60 words" }
+  { value: 4, label: "4 seconds", words: "~20 words" },
+  
 ];

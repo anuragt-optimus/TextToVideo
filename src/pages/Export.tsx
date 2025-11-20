@@ -54,6 +54,8 @@ useEffect(() => {
   const [selectedFormats, setSelectedFormats] = useState<string[]>(["horizontal"]);
   const [includeSubtitles, setIncludeSubtitles] = useState(true);
   const [includeThumbnail, setIncludeThumbnail] = useState(true);
+  const [isDownloading, setIsDownloading] = useState(false);
+
 
   const toggleFormat = (formatId: string) => {
     setSelectedFormats(prev =>
@@ -64,19 +66,26 @@ useEffect(() => {
   };
 
   const handleDownload = () => {
-  if (!videoBlobUrl) {
-    toast.error("Video is still generating. Please wait.");
-    return;
-  }
+  if (!videoBlobUrl) return; // button is disabled, so this never runs
+
+  setIsDownloading(true);
 
   const link = document.createElement("a");
   link.href = videoBlobUrl;
   link.download = "generated-video.mp4";
+
   document.body.appendChild(link);
   link.click();
   document.body.removeChild(link);
+
+  setTimeout(() => {
+    setIsDownloading(false);
+  }, 1500);
+
   toast.success("Download started!");
 };
+
+
 
   return (
     <div className="min-h-screen bg-gradient-subtle">
@@ -93,12 +102,21 @@ useEffect(() => {
           <div className="mb-12">
             <h2 className="text-xl font-semibold mb-6">Download Option</h2>
             <Card className="p-6">              
-              <div className="mt-6 pt-6 border-t">
-                <Button size="lg" className="w-full gap-2" onClick={handleDownload}>
-                  <Download className="w-5 h-5" />
-                  Download
-                </Button>
-              </div>
+              
+             <Button
+  onClick={handleDownload}
+  disabled={!videoBlobUrl || isDownloading}
+>
+  {!videoBlobUrl
+    ? "Rendering… please wait"
+    : isDownloading
+      ? "Downloading..."
+      : "Download Video"}
+</Button>
+
+
+
+              
             </Card>
           </div>
 
