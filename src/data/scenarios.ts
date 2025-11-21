@@ -15,7 +15,7 @@ export const SCENARIOS: Scenario[] = [
     description: "Create a respectful tribute video",
     placeholder: "Example: Create a memorial video for John Smith, who passed away on March 15th. He was a loving father, dedicated teacher for 30 years, and passionate about community service...",
     tone: "professional",
-    duration: 4,
+    duration: 12,
     icon: "Heart"
   },
   {
@@ -24,7 +24,7 @@ export const SCENARIOS: Scenario[] = [
     description: "Showcase your product or service",
     placeholder: "Example: Introduce our new AI-powered task manager that helps teams collaborate 3x faster. Features include smart scheduling, automated reminders, and team analytics...",
     tone: "professional",
-    duration: 4,
+    duration: 12,
     icon: "ShoppingBag"
   },
   {
@@ -33,7 +33,7 @@ export const SCENARIOS: Scenario[] = [
     description: "Explain your AI agent or software",
     placeholder: "Example: Our AI agent automates customer support by understanding natural language, providing instant responses, and learning from interactions to improve over time...",
     tone: "professional",
-    duration: 4,
+    duration: 12,
     icon: "Bot"
   },
   {
@@ -42,7 +42,7 @@ export const SCENARIOS: Scenario[] = [
     description: "Create instructional content",
     placeholder: "Example: Learn how to use our project management platform. This tutorial covers creating projects, assigning tasks, tracking progress, and generating reports...",
     tone: "professional",
-    duration: 4,
+    duration: 12,
     icon: "GraduationCap"
   },
   {
@@ -51,7 +51,7 @@ export const SCENARIOS: Scenario[] = [
     description: "Share important company news",
     placeholder: "Example: We're excited to announce our Series A funding of $10M, led by XYZ Ventures. This investment will help us expand our team and accelerate product development...",
     tone: "professional",
-    duration: 4,
+    duration: 12,
     icon: "Megaphone"
   }
 ];
