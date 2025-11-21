@@ -365,20 +365,6 @@ const totalWords = scenes.reduce(
                               </Select>
                             </div>
                             
-                            <div className="space-y-2">
-                              <Label htmlFor="length">Preferred Length</Label>
-                              <Select value={selectedLength} onValueChange={setSelectedLength}>
-                                <SelectTrigger id="length">
-                                  <SelectValue />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  <SelectItem value="short">Short (~4s)</SelectItem>
-                                  <SelectItem value="medium">Medium (~8s)</SelectItem>
-                                  <SelectItem value="long">Long (~12s)</SelectItem>
-                                </SelectContent>
-                              </Select>
-                            </div>
-                            
                             {scene.text && (
                               <div className="space-y-2">
                                 <Label>Current Scene</Label>

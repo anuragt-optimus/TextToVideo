@@ -39,6 +39,8 @@ const Upload = () => {
   const [selectedFormat, setSelectedFormat] = useState("horizontal");
   const [uploadedLogo, setUploadedLogo] = useState<File | null>(null);
   const [selectedVoice, setSelectedVoice] = useState("Male");
+  const [isGenerating, setIsGenerating] = useState(false);
+
 
 
 
@@ -168,11 +170,15 @@ const Upload = () => {
     toast.error("Please describe your idea or upload a file to continue.");
     return;
   }
-console.log("passed from here")
-const account = JSON.parse(localStorage.getItem("authUser") || "{}");
-const userId = account?.homeAccountId || "Not Found";
-console.log("User ID:", userId);
+
+  if (isGenerating) return; // prevent double-clicks
+
+  setIsGenerating(true);  // 🔥 disable the button
+
   try {
+    const account = JSON.parse(localStorage.getItem("authUser") || "{}");
+    const userId = account?.homeAccountId || "Not Found";
+
     const payload = {
       user_id: userId,
       session_id: crypto.randomUUID(),
@@ -202,11 +208,11 @@ console.log("User ID:", userId);
     );
 
     const result = await response.json();
-    console.log("API Response:", result);
     toast.dismiss();
 
     if (!response.ok) {
       toast.error("Failed to generate script");
+      setIsGenerating(false); // enable button again
       return;
     }
 
@@ -219,11 +225,12 @@ console.log("User ID:", userId);
         tone: selectedTone,
         files: uploadedFiles,
         duration: selectedDuration,
-        format:  selectedFormat === "horizontal"
-          ? "16:9"
-          : selectedFormat === "square"
-          ? "1:1"
-          : "9:16",
+        format:
+          selectedFormat === "horizontal"
+            ? "16:9"
+            : selectedFormat === "square"
+            ? "1:1"
+            : "9:16",
         voice: selectedVoice,
       },
     });
@@ -231,8 +238,10 @@ console.log("User ID:", userId);
     console.error(err);
     toast.dismiss();
     toast.error("Something went wrong while generating the script");
+    setIsGenerating(false);
   }
 };
+
 
 
   const triggerFileUpload = () => {
@@ -565,13 +574,15 @@ console.log("User ID:", userId);
           {/* Generate Script Button */}
           <div className="mt-8 flex justify-center">
             <Button 
-              size="lg" 
-              onClick={handleNext}
-              className="px-12 h-12 text-base"
-            >
-              Generate Script
-              <Sparkles className="ml-2 w-5 h-5" />
-            </Button>
+  size="lg" 
+  onClick={handleNext}
+  className="px-12 h-12 text-base"
+  disabled={isGenerating}
+>
+  {isGenerating ? "Generating..." : "Generate Script"}
+  {!isGenerating && <Sparkles className="ml-2 w-5 h-5" />}
+</Button>
+
           </div>
 
           {/* How It Works */}

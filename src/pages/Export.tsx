@@ -8,7 +8,6 @@ import { toast } from "sonner";
 import { useLocation } from "react-router-dom";
 import { useEffect } from "react";
 
-
 const STEPS = [
   { number: 1, label: "Upload" },
   { number: 2, label: "Script" },
@@ -66,7 +65,7 @@ useEffect(() => {
   };
 
   const handleDownload = () => {
-  if (!videoBlobUrl) return; // button is disabled, so this never runs
+  if (!videoBlobUrl) return;
 
   setIsDownloading(true);
 
@@ -84,8 +83,6 @@ useEffect(() => {
 
   toast.success("Download started!");
 };
-
-
 
   return (
     <div className="min-h-screen bg-gradient-subtle">
@@ -108,7 +105,7 @@ useEffect(() => {
   disabled={!videoBlobUrl || isDownloading}
 >
   {!videoBlobUrl
-    ? "Rendering… please wait"
+    ? "please wait"
     : isDownloading
       ? "Downloading..."
       : "Download Video"}
